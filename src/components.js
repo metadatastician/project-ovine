@@ -4,6 +4,7 @@ export class Transform {
     this.y = data.y || 0;
     this.z = data.z || 0;
     this.rotationY = data.rotationY || 0;
+    this.hoverHeight = data.hoverHeight || 0;
   }
 }
 
@@ -27,7 +28,7 @@ export class ActionState {
     this.isActive = false;
     this.radius = 0;
     this.maxRadius = 30;
-    this.type = 'NONE'; // 'BARK', 'SQUEAK'
+    this.type = 'NONE'; // 'BARK', 'SQUEAK', 'CHAOS_BEAM'
   }
 }
 
@@ -47,7 +48,7 @@ export class CACBrainComponent {
 
 export class MeshComponent {
   constructor(data) {
-    this.type = data.type || 'box';
+    this.type = data.type || 'SHEEP'; // 'SHEEP', 'CAT', 'DOG', 'HAMSTER', 'ALIEN', 'BORDER_COLLIE', 'FENCE'
     this.color = data.color || 0xffffff;
     this.mesh = null; 
     this.scale = data.scale || 1.0;
