@@ -1,0 +1,92 @@
+= Project Ovine — what this is for trialling
+:toc: macro
+:sectnums:
+
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+== How to read this file
+
+This is a *verbatim capture of the owner's stated design intent*, recorded
+2026-08-05. It is not a specification, not a plan, and not a prioritised
+backlog. Ordering carries no meaning.
+
+[IMPORTANT]
+====
+*Do not paraphrase the entries below.* Restate them and you will layer new
+meaning onto them while sounding faithful — which is the specific failure this
+estate has recorded before. If an entry is unclear, ask; do not improve it.
+Quote it, or leave it alone.
+
+Nothing here is committed to. These are things to *try*, over — in the owner's
+words — "obviously, a long time". Some will be discarded, and discarding them
+is a result, not a failure.
+====
+
+toc::[]
+
+== Why the repo exists
+
+`project-ovine` is a game, but its major role is as a testing ground for the
+enaction-engine's *cognitive, affective and conative* AI. That is what `CAC` in
+`CACBrainComponent` and `CACSystem` stands for.
+
+The Three.js code in `index.html` and `src/*.js` is a *mockup*, deliberately. It
+exists to design the game by trialling how it might look first, to think about
+the issues in responses to things, and to work out which behaviours are worth
+capturing, modelling, or potentially discarding. A proper implementation in
+Rust / a proof language is to be written alongside it. The mockup is meant to
+stay cheap to change and cheap to throw away.
+
+== The things to trial
+
+Recorded in the owner's words.
+
+=== Alliance discovered over time, not declared
+
+* "the alien beaming down and trying to release the sheep/cats"
+* "them learning that the alien is on their side over time"
+
+=== Confinement as a channel, not just a state
+
+* "the fact the herded are in the pen together having a downside as they get to
+  confer and share intelligence on things"
+
+=== The animals themselves
+
+* "the c-a-c characteristics of the animals"
+* "idiosyncratic personalities of individuals"
+
+=== Herders you do not directly control
+
+* "later things like having to coordinate your puppy and even train it alongside
+  you"
+* "things like having more sophisticated intelligences"
+
+=== Role functionality — perception shapes strategy
+
+* "role functionalities so some herders might have prey positioning of eyes
+  verses predator focus and how this might affect things"
+
+=== When the usual verb does not work
+
+* "some might be herding predators of themselves, needing to use a lure strategy
+  rather than a chase strategy"
+* "some might need to coordinate the herding of one animal to herd another
+  animal that itself will sort out the herding for you"
+
+=== Prediction as a learned capability
+
+* "the presence of landmines and learning of the ability to predict behaviours
+  so you don't herd sheep over them"
+
+=== Later-stage herded and herders
+
+* "ability to build in later stages robotic herders"
+* "or genetically modified things you need to herd"
+
+== What is deliberately NOT recorded here
+
+No sequencing, no increments, no acceptance criteria, no data model. Those are
+decisions that have not been taken, and writing them here would make taken
+decisions out of untaken ones.
