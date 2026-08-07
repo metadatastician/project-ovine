@@ -1,0 +1,320 @@
+= ov-09 — working document
+:sectnums:
+
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+//
+// Created by scripts/ovine-design.sh. The entry below is copied from
+// docs/design/TRIAL-BACKLOG.adoc by machine. DO NOT EDIT IT — `ovine-design.sh
+// check` compares it byte-for-byte against the backlog and fails if it drifts.
+
+Theme: _When the usual verb does not work_
+
+== The entry
+
+[quote]
+____
+some might be herding predators of themselves, needing to use a lure strategy rather than a chase strategy
+____
+
+== Intent — what is this actually asking?
+
+Not what it would look like. What question about cognition, affect or conation
+does trialling this answer? If the answer is "none", say so — that is a result.
+
+The mockup has one affective channel doing all the work, and its sign is fixed.
+Every brain fears the player: `CACSystem` raises `fear` for any entity within 30
+units of the player, and `fearBias` (`src/components.js:40`) scales the magnitude
+but never the direction (`src/systems.js:176-178`). Threat is therefore a
+property of one entity — the player — and not of a pair of them.
+
+That is what the entry puts pressure on. The cognitive question it forces is:
+*is the affect an animal feels toward another entity a property of that entity,
+or of the pair?* A cat approached by a hamster and a sheep approached by a
+hamster cannot both produce fear, or there is nothing here. Answering "of the
+pair" is a change of shape rather than a tuning exercise: the same approach by
+the same herder comes to mean different things to different animals, for a
+reason held in the animal.
+
+The conative question is separate and sharper. There is exactly one compliance
+mechanism — pressure — and every tool built on it (`BARK`, `CHAOS_BEAM`) is a
+fear injector, so `FLEE` is the only route by which an animal ends up somewhere
+the herder wanted it. So: can goal-arbitration reach the same displacement by an
+appetitive route, and does the animal's behaviour distinguish the two?
+
+It can, and one observable tells them apart honestly: *what happens when the
+herder disengages*. Under pressure, an animal's motion is a function of the
+herder's continued presence — stop, and it stops. Under an appetitive goal, the
+motion is a function of the animal's own belief about a target, and it continues
+after the herder stops. If that difference is not visible on screen, then
+whatever has been built is pressure wearing different paint, and this document
+has delivered nothing.
+
+Underneath both sits an affective question: an affect that is not fear has to be
+able to drive locomotion. `curiosity` exists and drives `INVESTIGATE` at gain 0.5
+against `FLEE`'s 1.5 (`src/systems.js:214-226`), which is decorative; `trust`
+(`src/components.js:44`) is declared and never read or written by any system.
+
+== Logic — how would it work
+
+The rule, stated so it could be implemented twice and agree. Name what is
+observed, what is believed, what is chosen, and by whom.
+
+What follows is *one rendering* of the entry, written so it can be built and
+checked. It is not offered as what the entry means. Rejecting this formalisation
+does not require rejecting the entry — if the rule below is wrong, the rule is
+wrong, and the quote above is untouched by that.
+
+=== R1 — the relation, and the one thing the model lacks
+
+`stance(observerKind, otherKind) -> {PREDATOR_OF_ME, PEER, PREY_OF_ME}`
+
+Directional and asymmetric. `stance(CAT, HAMSTER) = PREY_OF_ME` while
+`stance(HAMSTER, CAT) = PREDATOR_OF_ME`. Today the mockup has no such relation:
+threat is global to the player, so the case the entry names cannot be
+represented at all, at any setting of the existing dials.
+
+Both readings of the reflexive that the owner has kept live are *the same
+mechanism at different cells of one table*, which is the reason this document
+does not have to choose between them:
+
+* one is `stance(herdedKind, herderKind) = PREY_OF_ME`
+* the other is `stance(K, K) = PREY_OF_ME` for a herded kind `K`
+
+One asymmetric table, two entries, neither privileged. If it later turns out
+that only one cell does any work, that is a finding, not a decision taken here.
+
+=== R2 — observed
+
+Per animal, per tick. All of it is already computable inside `CACSystem`; no new
+sensing infrastructure is required.
+
+* the position and kind of every entity within `SENSE_RADIUS`
+* any active `ActionState` whose expanding radius currently covers this animal,
+  together with its `type` and the position of whatever emitted it
+
+=== R3 — believed
+
+State held in `CACBrainComponent`, persisting across ticks. This is the
+difference between a reaction and a disposition: the animal carries it, rather
+than the world recomputing it every frame.
+
+`fear`:: as now, but raised *only* by an entity `E` where
+`stance(self, E) = PREDATOR_OF_ME`. This single gate is the whole of the case
+the entry names. A pressure act from anything else produces no fear at all — not
+a reduced amount, none — however close and however loud.
+`fearSource`:: which entity raised it. New, and required for correctness:
+`FLEE` currently flees `pX, pZ` unconditionally (`src/systems.js:214-219`), so an
+animal frightened by the Border Collie runs from the player instead. Neither
+reading is observable until this is fixed.
+`appetite`:: raised by proximity to an entity `E` where
+`stance(self, E) = PREY_OF_ME`, scaled by a per-animal `appetiteBias` — a
+sibling of the existing `fearBias` and `socialBias`. Decays when no such entity
+is sensed.
+`pursuing` + `pursuitHold`:: the entity this animal believes it is going after,
+and how long that belief outlasts sensing it. This is what makes an appetitive
+goal a distinct mechanism rather than pressure with the sign flipped, and it is
+the thing the disengage test in step 5 actually tests.
+`lureAffinity`:: which of the two attractor forms in R5 this animal answers to —
+the herder's own body, a placed bait, or both. This is where the owner's ruling
+that the difference between them matters is carried in state.
+
+=== R4 — chosen, by the animal
+
+Ordered and total, replacing the arbitration at `src/systems.js:199-209`. Two
+implementations following this will agree.
+
+. `fear > FEAR_FLEE` -> `FLEE`, vector away from `fearSource` — *not* from the
+  player
+. else `pursuing` is set and `appetite > APPETITE_PURSUE` -> `PURSUE`, vector
+  toward `pursuing`
+. else `curiosity > CURIOSITY_INVESTIGATE` -> `INVESTIGATE` (unchanged)
+. else the role default (unchanged)
+
+Note the ordering is unchanged in shape — aversion still outranks appetite. It
+does not need to be re-ordered, because R3 stops the fear from ever being raised
+in the cases this entry is about. That is the point: the gate is on the input,
+not on the arbitration.
+
+=== R5 — chosen, by the herder
+
+* move (unchanged)
+* emit a pressure act (unchanged) — which now simply *fails* against any animal
+  for which the herder is not `PREDATOR_OF_ME`, with no special-casing anywhere
+* *be* an attractor: the herder's own body, for any animal that treats the
+  herder's kind as prey and whose `lureAffinity` admits it
+* *place* an attractor: a bait entity with a kind of its own
+
+=== R6 — the band, and what the two attractor forms cost
+
+Displacement by an attractor succeeds while the range `r` between attractor and
+animal is held inside `(R_STRIKE, R_INTEREST)` and the attractor moves toward
+the pen.
+
+* `r > R_INTEREST` — the animal stops sensing the attractor, `pursuitHold` runs
+  down, and when it expires `pursuing` clears and the animal reverts to R4.4.
+* `r < R_STRIKE` — the animal reaches the attractor.
+
+The two forms fail differently, and this is where the owner's ruling has teeth:
+
+* bait as attractor *fails safe* — a lost animal and a spent bait
+* the herder as attractor *fails dangerous* — the thing arrives at the herder
+* pressure also *fails safe* — the animal is simply not displaced
+
+So the herder-as-attractor is the only one of the three with a cost at the near
+edge of the band, and that cost is the only reason it would *play* differently
+rather than merely look different. See D3.
+
+One fact about the mockup that bears on this directly and is not a matter of
+opinion: the player as hamster has `maxSpeed: 0.3` and the herd has
+`maxSpeed: 0.5` (`src/main.js:93` and `src/main.js:103`). A pursuing animal is
+faster than the herder it is pursuing, and the gain constants only affect
+acceleration before the clamp — so it closes without fail. The near edge of the
+band therefore *cannot* be held by running. It can only be held by something
+else: terrain and the river, breaking sense range behind an obstacle, or
+dropping a bait to reset `pursuing`. Whether that is interesting or merely
+frustrating is exactly what D2 asks.
+
+=== Constants
+
+Named so that two implementations agree. The first three already exist in the
+mockup at these values; the rest are proposed, and are deliberately mirrored on
+the existing scales rather than invented fresh.
+
+[cols="1,1,3"]
+|===
+|Name |Value |Note
+
+|`SENSE_RADIUS` |30 |existing proximity radius, `src/systems.js:176`
+|`FEAR_FLEE` |0.5 |existing, `src/systems.js:199`
+|`CURIOSITY_INVESTIGATE` |0.4 |existing, `src/systems.js:201`
+|`APPETITE_PURSUE` |0.4 |mirrors the curiosity threshold
+|appetite rise |`dt * 0.5 * appetiteBias` |mirrors the fear rise
+|appetite decay |`dt * 0.2` |mirrors the existing decay
+|`PURSUIT_HOLD` |4.0 s |long enough to be visible in the step 5 test
+|`R_INTEREST` |30 |same as `SENSE_RADIUS`, until there is reason to differ
+|`R_STRIKE` |3.0 |just outside the 2.0 collision push, `src/systems.js:29`
+|===
+
+== Interim steps
+
+The smallest thing that shows something. The mockup is disposable, so "fake it
+in JS to see if the behaviour reads" is a legitimate first step and often the
+right one. Steps, not a schedule.
+
+Every one of these is a fake in the JS mockup, which is what the mockup is for.
+Nothing below is a proposal to build anything in Rust.
+
+Worth knowing before step 1, because it decides how cheap this is: *both verbs
+already exist in the mockup, and one of them is already cancelled.* The lobby
+defaults to "Hamster (Squeak Lure)" and "Cats (Curious, Skittish)"
+(`index.html:43-50`); `PlayerInputSystem` gives the hamster `SQUEAK` and the
+sheepdog `BARK` (`src/systems.js:302`); `SQUEAK` feeds `curiosity` and `BARK`
+feeds `fear`. But the ungated proximity fear rises at `dt * 0.5 * 0.8` for a cat
+(`fearBias: 0.8`, `src/main.js:108`), which is +0.4/s, crossing `FEAR_FLEE` in
+about *1.25 seconds* — and `FLEE` is tested before `INVESTIGATE`. So a squeak
+pulls a cat in for roughly a second, after which the ungated channel overrides
+it and the cat leaves at three times the gain it approached with.
+
+. *The negative demonstration, and it is the cheapest thing here.* Add `stance()`
+  as a literal table and gate the proximity fear at `src/systems.js:176-178` on
+  `PREDATOR_OF_ME`. Change nothing else — no appetite, no pursuit, no bait. On
+  the lobby's existing default the cats should stop fleeing, and the squeak that
+  is cancelled after ~1.25 s today should start holding. This shows the case the
+  entry names *before any attractor code exists at all*. If it does not read as
+  interesting on screen, this entry is in trouble already and D1 applies.
+. *Flee the right thing.* Add `fearSource` and point the `FLEE` vector away from
+  it instead of away from `pX, pZ`. Small, and required before either reading is
+  observable — without it the Border Collie's bark still sends cats away from
+  the player.
+. *The second reading, in the same table, with no new code.* Set
+  `stance(CAT, CAT) = PREY_OF_ME` and watch what a herd does when its members
+  are each other's prey. This is the cheap way to find out whether that reading
+  has content of its own or collapses into the other one.
+. *The attractor proper, both forms.* Add `appetite`, `pursuing`, `pursuitHold`,
+  the `PURSUE` goal, `R_INTEREST`/`R_STRIKE`, and a bait entity. Give some
+  animals differing `lureAffinity` so both forms are visible in one run rather
+  than in two.
+. *The test that this is not pressure repainted.* Disengage — walk away fast. A
+  real appetitive goal keeps the animal coming for `PURSUIT_HOLD` and then loses
+  it; pressure with the sign flipped stops the instant the herder stops. The HUD
+  already renders goal plus two bars (`src/main.js:174-189`); add `appetite` and
+  `pursuing` to it. If the difference is invisible, the persistence is not doing
+  work and should be cut — which is most of what distinguishes R3 from a tuned
+  `socialBias`.
+. *The near edge.* What happens at `R_STRIKE` when the attractor is the herder.
+  Most discardable, most game-defining, and blocked on Q1.
+
+== What would make us discard this
+
+The owner's framing includes "potentially discard". An entry with no discard
+condition has not been thought about yet.
+
+Three, and the first is the real one. It is put first because it is the argument
+*against* carrying this entry, and it is the strongest thing in this document.
+
+=== D1 — if gating the fear is all it takes, this is already built
+
+`fearBias` already exists per-animal (`src/components.js:40`). A cat spawned with
+`fearBias: 0` and a raised `socialBias` would already ignore pressure and answer
+squeaks — displacement by attraction rather than by pressure, in today's code,
+with no new mechanism, no `stance` table and no R3. If that is the whole of it,
+the honest conclusion is that this entry is *already implemented* and should be
+closed as such rather than built.
+
+Three things should survive that test. Run step 1, then check each one; if none
+of them matters in play, drop the entry and just tune the biases.
+
+* a scalar makes an animal ignore *everyone's* pressure, including the Border
+  Collie's. The relation in R1 is per-pair; a bias is per-animal. Does that
+  distinction ever show up on screen?
+* a scalar gives no persistence after the herder disengages — no `pursuing`, no
+  `PURSUIT_HOLD`, so nothing to see in step 5.
+* a scalar gives no near edge to the band, therefore no cost, therefore no
+  decision for the player.
+
+=== D2 — if the band is not steerable, this is a chore and not a strategy
+
+R6 establishes that the near edge cannot be held by running, because the pursuer
+is faster than the herder. If holding `r` inside `(R_STRIKE, R_INTEREST)` *while
+also choosing a direction* turns out to be either trivially easy or impossibly
+fiddly with WASD and the existing camera modes, then there is no decision being
+made and the entry does not earn its place. Discard it, or discard the band and
+keep only the gate from step 1.
+
+=== D3 — if the near edge has no cost, drop that half
+
+Without a consequence at `R_STRIKE`, the herder-as-attractor is the
+bait-as-attractor with extra steps, and the bait-as-attractor is pressure with
+the sign flipped and a prop added. If the game does not want a fail state for
+the herder, keep bait only — and then D1 has to be asked again, because a bait
+that raises `curiosity` is expressible on the existing channel and may need
+none of this.
+
+== Open questions for the owner
+
+. *What happens at `R_STRIKE` when the attractor is the herder?* This is the
+  only unanswered thing that blocks work — step 6 cannot start without it, and
+  D3 turns on it. Everything else in this document can proceed while it is open.
+. *Is `stance` fixed when an animal spawns, or can it change with experience?*
+  Asked rather than assumed. `trust` (`src/components.js:44`) is declared and is
+  never read or written by any system in the mockup, and it has deliberately not
+  been used anywhere above in case it is spoken for. Not proposing anything for
+  it — just asking whether it is free.
+. *Is `stance` keyed on kind, or may an individual differ from its kind?* R1 is
+  written keyed on kind because that is cheaper. Keying it on the entity is not
+  much harder, but it is a different table and worth deciding before it sets.
+. *Under the second reading, does an animal that is prey to its own kind still
+  flock?* The herd-centre average at `src/systems.js:116-125` currently means
+  "where the herd is". If members are each other's prey it would have to mean
+  something else, or nothing.
+. *Naming.* `stance`, `appetite`, `pursuing`, `PURSUE`, `lureAffinity`,
+  `R_INTEREST` and `R_STRIKE` are placeholders chosen to sit beside the existing
+  vocabulary. Say so now if you want different ones, before they set.
+
+== Status
+
+* [x] Intent agreed
+* [x] Logic stated
+* [x] Interim steps identified
+* [x] Discard condition named
