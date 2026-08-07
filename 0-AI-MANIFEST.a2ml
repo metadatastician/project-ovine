@@ -5,11 +5,11 @@
 #
 [metadata]
 version = "0.1.0"
-last-updated = "{{CURRENT_DATE}}"
+last-updated = "2026-08-05"
 
 [project]
-name = "[YOUR-REPO-NAME]"
-purpose = "{{PROJECT_DESCRIPTION}}"
+name = "Project Ovine"
+purpose = "Game and proving ground for the enaction-engine's cognitive, affective and conative AI: imaginary herding — cats or sheep, by dogs or hamsters — used to trial intention, theory of mind, communication between herded animals in response, reactions to human intelligence, and evolving strategy and planning based on beliefs."
 
 [ai-allocation]
 agents = [

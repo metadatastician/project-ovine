@@ -102,11 +102,19 @@ case "$REPO_NAME" in
 esac
 
 # Files that legitimately contain tokens after instantiation.
+# .github/settings.yml is here for a reason worth stating: the dedicated
+# settings check ABOVE (the identity-key guard) already scans it, and
+# deliberately exempts comment lines so the remediated file can quote the
+# tokens from the rename incident as evidence. Without this entry the
+# generic scan below re-flags those same comment lines, so the file passes
+# its own strict check and fails the general one. The cure for the incident
+# and the gate against the incident were in direct conflict.
 ALLOWED=(
     ".machine_readable/ai/PLACEHOLDERS.adoc"   # the token vocabulary itself
     "EXPLAINME.adoc"                           # prose explaining that tokens exist
     "scripts/check-no-placeholders.sh"         # this file (the pattern above)
     "tests/e2e/template_instantiation_test.sh" # names tokens in its answer list
+    ".github/settings.yml"                     # has its OWN, stricter check above
 )
 
 is_allowed() {
