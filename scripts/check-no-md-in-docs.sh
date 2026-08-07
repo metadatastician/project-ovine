@@ -23,7 +23,14 @@ REPO_ROOT="${1:-.}"
 DOCS_DIR="$REPO_ROOT/docs"
 
 # Justified exceptions, relative to repo root. Empty by default.
-ALLOWED=()
+ALLOWED=(
+    # Owner-supplied source document, preserved BYTE-FOR-BYTE under
+    # docs/design/verbatim/. Converting it to AsciiDoc would mean rewriting it,
+    # and the whole point of that directory is that these files are not
+    # rewritten — see docs/design/verbatim/README.adoc and the same
+    # do-not-paraphrase rule that governs docs/design/TRIAL-BACKLOG.adoc.
+    "docs/design/verbatim/cac-agent-system-spec-2026-08-07.md"
+)
 
 if [ ! -d "$DOCS_DIR" ]; then
     echo "PASS: no docs/ directory (nothing to check)"
