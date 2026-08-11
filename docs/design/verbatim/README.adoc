@@ -1,0 +1,158 @@
+= Verbatim design sources
+:toc: macro
+:sectnums:
+
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (metadatastician) <j.d.a.jewell@open.ac.uk>
+
+== What this directory is
+
+Owner-supplied design documents and artefacts, preserved *byte-for-byte*.
+
+Nothing in here is edited, reformatted, converted, corrected or summarised. If
+a file here is wrong, it stays wrong and the correction lives elsewhere with a
+pointer back. This is the same rule that governs
+`docs/design/TRIAL-BACKLOG.adoc`: restating a source plausibly while layering
+new meaning onto it is the specific failure this estate has recorded before.
+
+The `.md` file is allow-listed in `scripts/check-no-md-in-docs.sh` rather than
+converted to AsciiDoc, because converting it would mean rewriting it.
+
+toc::[]
+
+== Inventory
+
+[cols="2,1,1,4",options="header"]
+|===
+| File | Size | Source date | What it is
+
+| `cac-agent-system-spec-2026-08-07.md`
+| 729 lines
+| 2026-08-07 13:43
+| "PROJECT OVINE — Enhanced CAC Agent System: Deep Research Specification & AI
+  Coding Prompt", v1.0. Recovered from the owner's Downloads folder.
+
+| `project-ovine-preview-2026-08-07.html`
+| 904 lines
+| 2026-08-07 12:43
+| Single-file Three.js mockup recovered from the owner's Desktop. It is the
+  implementation the specification above is written *against*.
+|===
+
+== ⚠ These describe a DIFFERENT mockup from the one in `src/`
+
+This is the most important thing to know before reading either file, and it is
+recorded here because it is easy to miss and expensive to miss.
+
+The repository's committed mockup is an *entity-component-system*:
+`index.html` plus `src/{ecs,components,systems,main}.js`, with `World`,
+`CACBrainComponent` carrying `fear` / `trust` / `curiosity`, and a `CACSystem`
+that arbitrates over a single `goal` string.
+
+`project-ovine-preview-2026-08-07.html` is a *different and, in the CAC
+dimension, considerably richer* implementation. It is a single file with no ECS,
+and it models per-cat `B` (beliefs), `E` (emotions) and `D` (drives) namespaces,
+named temperaments, utility-based goal arbitration, and peer-to-peer knowledge
+sharing via `socialTick()`. None of that exists in `src/`.
+
+[cols="1,3,3",options="header"]
+|===
+| | `src/*.js` (committed ECS) | `preview.html` (this directory)
+
+| Structure | ECS: World, components, systems | Single file, plain objects
+| Cognitive | *none* — no belief state at all | `B.gateOpen`, `B.tom`, `B.trap`, `B.alien`, `B.hamX/hamZ`
+| Affective | `fear`, `curiosity` (`trust` declared, never written) | `E.fear`, `E.curiosity`, `E.trust`, `E.frustration`, `E.contentment`, `E.boredom`
+| Conative | one `goal` string, if/else arbitration | `D.safety`, `D.freedom`, `D.affiliation`, `D.exploration`, `D.play`, `D.rest`; utility scoring
+| Individuality | two bias scalars | named `TEMPERAMENTS`
+| Social | none | `socialTick()` — cats share beliefs by proximity
+|===
+
+*Neither has been merged into the other, and this document does not propose
+merging them.* Which one becomes the line of development is an open decision
+for the owner. It is recorded in `DEBT.md`.
+
+== What is in the specification
+
+An index only. Read the file itself for the content.
+
+Part 1 — Research foundation::
+Psychological grounding: Lazarus's cognitive-motivational-relational theory
+(appraisal), the PAD model (pleasure/arousal/dominance), Theory of Mind at
+levels 0–2, Cannon's homeostatic drives, and Bandura's social learning. Then
+animal-behaviour tables for feline behaviour, canine herding, and predator-prey
+dynamics, each row citing a source. Then game-design principles: emergence,
+player agency, difficulty curves.
+
+Part 2 — System architecture::
+The CAC agent loop as a diagram, with four named feedback loops
+(conative→cognitive, affective→cognitive, conative→affective, action→all).
+Proposed data structures: an explicit `TRAITS` object with *three traits per
+channel*, a `DOG` structure, and hamster predation fields. A knowledge table
+saying which beliefs are shared, how fast they decay, and what they change.
+
+Part 3 — Feature specifications::
+Sheepdog herder (nip / bark / circle, with cooldowns and a fight-back risk);
+the explicit trait system with a temperament→trait mapping; *hamster
+predation*; pen-learning enhancements including a "Hive Intel" meter;
+trait-based appearance; minor polish.
+
+Part 4 — Coding prompt::
+A three-phase roadmap, a proposed file layout, an integration table naming
+existing hooks and rough line counts, pseudocode for the key additions, a
+testing strategy (manual verification plus balance targets), and performance
+notes.
+
+Part 5 — Appendices::
+A parameter tuning guide with current values and recommended ranges, future
+extensions marked out of scope, an academic reference list, and a glossary.
+
+== Two connections worth naming
+
+=== The specification already proposes an answer to ov-09
+
+`docs/design/logics/ov-09.adoc` works up the backlog entry about herding
+animals that prey on the herder, and concludes that the model needs a
+*relation* between kinds rather than a global threat property.
+
+Part 3.3 of the specification, "Hamster Predation", proposes a mechanism for
+what appears to be the same situation, and reaches it from a different
+direction: a predation *event* sets a belief (`B.hamsterIsPrey`), the belief
+flips the animal's goal from fleeing to hunting, and the belief then spreads to
+other animals through the existing social-learning channel.
+
+That is a *learned and transmissible* version of what ov-09 renders as a fixed
+table. It bears directly on ov-09's open question 2 — whether the relation is
+fixed at spawn or changes with experience — and it answers it "learned".
+
+The ov-09 document has *not* been rewritten to adopt this. The two were
+produced independently, and reconciling them is the owner's call.
+
+=== It carries a fuller answer to "how many measures per channel"
+
+The channel layout in `src/telemetry.js` reserves *two* slots per CAC channel,
+following the owner's recollection of an earlier design, with the two cognitive
+slots left openly unassigned because their names were not recalled.
+
+This specification gives a fuller structure: *three traits* per channel
+(cognitive: curiosity, memory, alertness · affective: anxiety, playfulness,
+trust · conative: independence, energy, socialness), and separately *six state
+variables* per channel in the agent-loop diagram.
+
+`src/telemetry.js` has not been changed to match, because the trait system it
+describes does not exist in `src/`. The slots stay declared-and-empty, which is
+the honest state.
+
+== Provenance and licence
+
+Both files were recovered on 2026-08-07 from the owner's own machine — the
+specification from `Downloads`, the mockup from `Desktop` — and neither existed
+anywhere in version control before that. They are the owner's own material.
+
+The specification names its author as "AI Assistant (for Jonathan Jewell)". It
+is a generated document commissioned by the owner, not an independent source,
+and its research citations have *not* been verified against the cited papers.
+Treat the reference list as leads, not as checked provenance.
+
+No per-file SPDX header has been added to either artefact: inserting one would
+modify a file this directory exists to keep unmodified. Both are covered by the
+`Files: *` default in `.machine_readable/compliance/reuse/dep5`.

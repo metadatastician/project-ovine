@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROJECT OVINE — Cognitive · Affective · Conative Sandbox</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<style>
+  :root{
+    --bg:#070b18; --panel:rgba(11,17,34,.72); --line:#22304f;
+    --cog:#5eead4; --aff:#f472b6; --con:#fbbf24; --acc:#38bdf8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;overflow:hidden;background:var(--bg);color:#e2e8f0;
+    font-family:'Segoe UI',system-ui,sans-serif;user-select:none;-webkit-font-smoothing:antialiased}
+  canvas{display:block;cursor:none}
+  #vignette{position:fixed;inset:0;pointer-events:none;z-index:2;
+    background:radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 40%, rgba(0,0,0,.55) 100%);}
+  #scanlines{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.16;
+    background:repeating-linear-gradient(to bottom,rgba(255,255,255,.06) 0 1px,transparent 1px 3px)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    backdrop-filter:blur(10px);box-shadow:0 10px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05)}
+  #hud{position:fixed;top:16px;left:16px;z-index:10;width:290px;pointer-events:none}
+  #hud .panel{pointer-events:auto;padding:14px}
+  h1{margin:0;font-size:17px;letter-spacing:.14em;color:#f1f5f9;font-weight:700}
+  .sub{font-size:10.5px;letter-spacing:.18em;color:#64748b;text-transform:uppercase;margin-top:3px}
+  .mono{font-family:'SF Mono',ui-monospace,Consolas,monospace}
+  .btn{background:#16203a;border:1px solid #2c3a5c;color:#cbd5e1;border-radius:8px;
+    padding:7px 6px;font-size:10.5px;cursor:pointer;transition:.18s;letter-spacing:.05em}
+  .btn:hover{background:#1e2b4d;color:#fff;border-color:#3f5480}
+  .btn.on{background:var(--acc);color:#06121f;border-color:var(--acc);font-weight:700}
+  .key{display:inline-block;min-width:17px;text-align:center;background:#1c2947;border:1px solid #35486f;
+    border-radius:4px;padding:1px 4px;font-size:9.5px;font-family:monospace;color:#93c5fd}
+  #tel{position:fixed;top:16px;right:16px;z-index:10;width:326px;display:none}
+  #tel .panel{padding:14px;max-height:calc(100vh - 32px);overflow-y:auto}
+  #tel .panel::-webkit-scrollbar{width:5px}
+  #tel .panel::-webkit-scrollbar-thumb{background:#2c3a5c;border-radius:3px}
+  .sect{margin-top:12px;padding-top:9px;border-top:1px dashed #23324f}
+  .sect-h{font-size:10px;letter-spacing:.2em;font-weight:800;text-transform:uppercase;margin-bottom:7px;display:flex;justify-content:space-between}
+  .row{display:flex;justify-content:space-between;align-items:center;font-size:11px;margin:3px 0;gap:8px}
+  .lbl{color:#8296b5}
+  .val{color:#e2e8f0;font-family:monospace;font-size:10.5px;text-align:right}
+  .bar{height:6px;border-radius:3px;background:#16203a;overflow:hidden;flex:1;min-width:64px}
+  .bar>i{display:block;height:100%;width:0%;border-radius:3px;transition:width .18s linear}
+  .brow{display:grid;grid-template-columns:74px 1fr 34px;gap:7px;align-items:center;margin:4px 0;font-size:10.5px}
+  .brow span:first-child{color:#93a4c0}
+  .brow .n{font-family:monospace;color:#cbd5e1;text-align:right;font-size:10px}
+  .goalrow{display:flex;justify-content:space-between;font-size:10.5px;padding:2.5px 6px;border-radius:5px;margin:2px 0;
+    background:#111c33;font-family:monospace;color:#94a3b8}
+  .goalrow.top{background:linear-gradient(90deg,rgba(251,191,36,.22),rgba(251,191,36,.03));color:#fde68a;font-weight:700}
+  #mono{font-size:11px;font-style:italic;color:#a5b4fc;background:#131d36;border-left:2px solid #6366f1;
+    padding:7px 9px;border-radius:0 7px 7px 0;margin-top:10px;line-height:1.45;min-height:34px}
+  #labels{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+  .tag{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
+    background:rgba(8,13,26,.78);border:1px solid #2b3a5c;border-radius:8px;padding:2px 7px;font-size:11px;
+    color:#cbd5e1;display:flex;gap:5px;align-items:center;transition:border-color .2s,box-shadow .2s}
+  .tag b{color:#fff;font-size:10px}
+  .tag .g{font-size:9px;letter-spacing:.08em;color:#7f8fab;text-transform:uppercase}
+  .tag.sel{border-color:#e879f9;box-shadow:0 0 14px rgba(232,121,249,.45)}
+  #overlay{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 40%,#0d1730,#04070f 75%);text-align:center;padding:20px}
+  .big{font-size:52px;letter-spacing:.22em;margin:0;font-weight:800;
+    background:linear-gradient(90deg,#5eead4,#38bdf8,#e879f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cards{display:flex;gap:14px;margin:26px 0;flex-wrap:wrap;justify-content:center;max-width:820px}
+  .card{width:236px;padding:14px;border-radius:12px;background:rgba(15,23,42,.7);border:1px solid #23324f;text-align:left}
+  .card h3{margin:0 0 6px;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+  .card p{margin:0;font-size:11.5px;color:#94a3b8;line-height:1.55}
+  .start{margin-top:8px;background:linear-gradient(90deg,#38bdf8,#818cf8);color:#04101f;border:0;padding:14px 38px;
+    font-size:15px;font-weight:800;letter-spacing:.18em;border-radius:10px;cursor:pointer;box-shadow:0 0 34px rgba(56,189,248,.45)}
+  .start:hover{transform:scale(1.04)}
+  #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:20;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+  .msg{background:rgba(8,13,26,.85);border:1px solid #2b3a5c;border-radius:20px;padding:6px 16px;font-size:11.5px;
+    letter-spacing:.06em;animation:pop .3s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(10px)}}
+  #alert{display:none;margin-top:10px;font-size:11px;font-weight:700;color:#fca5a5;letter-spacing:.06em;
+    background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:7px;animation:blink 1.1s infinite}
+  @keyframes blink{50%{opacity:.42}}
+  #crosshair{position:fixed;width:26px;height:26px;margin:-13px 0 0 -13px;pointer-events:none;z-index:8;
+    border:1px solid rgba(94,234,212,.7);border-radius:50%;transition:transform .08s}
+  #crosshair:before,#crosshair:after{content:'';position:absolute;background:rgba(94,234,212,.6)}
+  #crosshair:before{left:50%;top:-6px;width:1px;height:6px}
+  #crosshair:after{left:50%;bottom:-6px;width:1px;height:6px}
+</style>
+</head>
+<body>
+<div id="labels"></div>
+<div id="crosshair"></div>
+<div id="vignette"></div><div id="scanlines"></div>
+
+<div id="hud">
+  <div class="panel">
+    <h1>PROJECT OVINE</h1>
+    <div class="sub">C·A·C Agent Sandbox v3.0</div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <div style="flex:1;background:#111c33;border-radius:9px;padding:8px 9px">
+        <div style="font-size:9px;letter-spacing:.14em;color:#64748b">CONTAINED</div>
+        <div class="mono" style="font-size:20px;color:#4ade80;font-weight:700"><span id="score">0</span>/5</div>
+      </div>
+      <div style="flex:1;background:#111c33;border-radius:9px;padding:8px 9px">
+        <div style="font-size:9px;letter-spacing:.14em;color:#64748b">HIVE INTEL</div>
+        <div class="mono" style="font-size:20px;color:#c084fc;font-weight:700"><span id="hive">0</span>%</div>
+      </div>
+    </div>
+    <div style="margin-top:9px;font-size:10px;color:#64748b;letter-spacing:.08em">GATE: <span id="gatest" class="mono" style="color:#4ade80">SECURED</span> · LOCK TIMER <span id="wintimer" class="mono" style="color:#fbbf24">0.0s</span></div>
+    <div id="alert">⚠ ALIEN OPERATIVE INBOUND — INTERCEPT BEFORE IT HACKS THE GATE</div>
+    <div style="display:flex;gap:6px;margin-top:12px">
+      <button class="btn" id="cam-follow" style="flex:1">FOLLOW</button>
+      <button class="btn on" id="cam-top" style="flex:1">TOP</button>
+      <button class="btn" id="cam-iso" style="flex:1">ISO</button>
+    </div>
+    <button class="btn" id="ufo-toggle" style="width:100%;margin-top:6px">🔇 UFO DRONE: MUTED</button>
+    <div style="margin-top:11px;font-size:10.5px;color:#7f8fab;line-height:1.9">
+      <span class="key">MOVE</span> mouse guides hamster<br>
+      <span class="key">SPC</span> squeak → spikes fear, herds cats<br>
+      <span class="key">SHIFT</span> hold still & calm → builds trust<br>
+      <span class="key">C</span> drop catnip (<span id="nipct">3</span>) → lures curiosity<br>
+      <span class="key">1</span>–<span class="key">5</span> inspect agent mind · <span class="key">0</span> close
+    </div>
+  </div>
+</div>
+
+<div id="tel"><div class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-size:14px;font-weight:800;letter-spacing:.14em" id="t-title">AGENT 1</div>
+    <div class="mono" style="font-size:10px;color:#64748b" id="t-temp">temperament</div>
+  </div>
+  <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+    <div style="font-size:22px" id="t-emoji">😺</div>
+    <div>
+      <div class="mono" style="font-size:13px;color:#fde68a" id="t-goal">WANDER</div>
+      <div style="font-size:10px;color:#7f8fab" id="t-goaldesc">exploring the perimeter</div>
+    </div>
+  </div>
+  <div id="mono">…</div>
+
+  <div class="sect">
+    <div class="sect-h" style="color:var(--cog)"><span>◈ Cognitive — beliefs & ToM</span><span class="mono" id="t-conf"></span></div>
+    <div class="row"><span class="lbl">Gate belief</span><span class="val" id="c-gate">closed (sure)</span></div>
+    <div class="row"><span class="lbl">Hamster last seen</span><span class="val" id="c-seen">—</span></div>
+    <div class="brow"><span>Alien-hack theory</span><div class="bar"><i id="c-alien" style="background:var(--cog)"></i></div><span class="n" id="c-alien-n">0</span></div>
+    <div class="brow"><span>ToM: "it herds us"</span><div class="bar"><i id="c-tom" style="background:var(--cog)"></i></div><span class="n" id="c-tom-n">0</span></div>
+    <div class="brow"><span>Pen = trap model</span><div class="bar"><i id="c-trap" style="background:var(--cog)"></i></div><span class="n" id="c-trap-n">0</span></div>
+    <div class="brow"><span>Predicts intercept</span><div class="bar"><i id="c-pred" style="background:var(--cog)"></i></div><span class="n" id="c-pred-n">0</span></div>
+    <div class="row" style="margin-top:5px"><span class="lbl">Peer models (est. intel)</span><span class="val mono" id="c-peers">—</span></div>
+  </div>
+
+  <div class="sect">
+    <div class="sect-h" style="color:var(--aff)"><span>♥ Affective — appraisal & PAD</span><span class="mono" id="t-pad"></span></div>
+    <div class="brow"><span>Fear</span><div class="bar"><i id="a-fear" style="background:#f87171"></i></div><span class="n" id="a-fear-n">0</span></div>
+    <div class="brow"><span>Frustration</span><div class="bar"><i id="a-frus" style="background:#fb923c"></i></div><span class="n" id="a-frus-n">0</span></div>
+    <div class="brow"><span>Curiosity</span><div class="bar"><i id="a-cur" style="background:#38bdf8"></i></div><span class="n" id="a-cur-n">0</span></div>
+    <div class="brow"><span>Contentment</span><div class="bar"><i id="a-cont" style="background:#4ade80"></i></div><span class="n" id="a-cont-n">0</span></div>
+    <div class="brow"><span>Boredom</span><div class="bar"><i id="a-bore" style="background:#a3a3a3"></i></div><span class="n" id="a-bore-n">0</span></div>
+    <div class="brow"><span>Trust (hamster)</span><div class="bar"><i id="a-trust" style="background:#e879f9"></i></div><span class="n" id="a-trust-n">0</span></div>
+  </div>
+
+  <div class="sect">
+    <div class="sect-h" style="color:var(--con)"><span>➤ Conative — drives & arbitration</span><span class="mono" id="t-commit"></span></div>
+    <div class="brow"><span>Safety</span><div class="bar"><i id="d-safety" style="background:var(--con)"></i></div><span class="n" id="d-safety-n">0</span></div>
+    <div class="brow"><span>Freedom</span><div class="bar"><i id="d-free" style="background:var(--con)"></i></div><span class="n" id="d-free-n">0</span></div>
+    <div class="brow"><span>Affiliation</span><div class="bar"><i id="d-affil" style="background:var(--con)"></i></div><span class="n" id="d-affil-n">0</span></div>
+    <div class="brow"><span>Exploration</span><div class="bar"><i id="d-explore" style="background:var(--con)"></i></div><span class="n" id="d-explore-n">0</span></div>
+    <div class="brow"><span>Play</span><div class="bar"><i id="d-play" style="background:var(--con)"></i></div><span class="n" id="d-play-n">0</span></div>
+    <div class="brow"><span>Rest</span><div class="bar"><i id="d-rest" style="background:var(--con)"></i></div><span class="n" id="d-rest-n">0</span></div>
+    <div style="margin-top:8px;font-size:9.5px;letter-spacing:.16em;color:#64748b">UTILITY RANKING</div>
+    <div id="t-utils"></div>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+
+<div id="overlay">
+  <h1 class="big">PROJECT OVINE</h1>
+  <div class="sub" style="font-size:12px;margin-top:10px">A hamster, five cats with minds, and an alien gate-hacking problem</div>
+  <div class="cards">
+    <div class="card"><h3 style="color:var(--cog)">◈ Cognitive</h3><p>Each cat keeps beliefs that decay without perception: where you were, whether the gate is open, whether the pen is a trap — plus a <b>theory of mind</b> of you and a model of what its peers know. Smart cats predict your intercept point.</p></div>
+    <div class="card"><h3 style="color:var(--aff)">♥ Affective</h3><p>Events are appraised into fear, frustration, curiosity, contentment, boredom and trust, summarised as PAD (pleasure / arousal / dominance). Emotion sets speed, flight distance and how beliefs are learned.</p></div>
+    <div class="card"><h3 style="color:var(--con)">➤ Conative</h3><p>Six homeostatic drives compete. Every tick a utility arbiter picks a goal — flee, raid the gate, huddle, explore, play, rest — with commitment hysteresis so cats don't dither.</p></div>
+  </div>
+  <p style="font-size:12px;color:#94a3b8;max-width:620px;line-height:1.6">
+    <b style="color:#fbbf24">Two ways to win:</b> scare cats in with squeaks, or earn their <b>trust</b> by holding still nearby — trusting cats will happily follow you through the gate. Hold all five for 10 seconds. Audio is procedural (Tone.js).
+  </p>
+  <button class="start" id="start">INITIALIZE</button>
+</div>
+
+<script>
+/* ══════════════════════ CONFIG ══════════════════════ */
+const CFG = {
+  arena: 145, penR: 34, gateAng: Math.PI*0.78, gateHalf: 0.30,
+  nCats: 5, winHold: 10
+};
+const clamp=(v,a=0,b=1)=>v<a?a:v>b?b:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const angDiff=(a,b)=>{let d=Math.abs(a-b)%(Math.PI*2);return d>Math.PI?Math.PI*2-d:d;};
+
+/* ══════════════════════ SCENE ══════════════════════ */
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#070b18');
+scene.fog=new THREE.FogExp2('#070b18',0.0042);
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,0.5,900);
+camera.position.set(0,230,1);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0x5b7bd5,0x0a1020,0.55));
+const key=new THREE.DirectionalLight(0xdce7ff,0.85);
+key.position.set(70,140,60); key.castShadow=true;
+key.shadow.mapSize.set(2048,2048);
+const sc=key.shadow.camera; sc.left=-120;sc.right=120;sc.top=120;sc.bottom=-120;sc.far=400;
+scene.add(key);
+const rim=new THREE.DirectionalLight(0x38bdf8,0.4); rim.position.set(-80,40,-70); scene.add(rim);
+const penLight=new THREE.PointLight(0x34d399,1.1,140,2); penLight.position.set(0,42,0); scene.add(penLight);
+
+/* Ground */
+const gTex=(()=>{const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');
+  const g=x.createRadialGradient(256,256,40,256,256,256); g.addColorStop(0,'#16223f');g.addColorStop(1,'#0a1122');
+  x.fillStyle=g;x.fillRect(0,0,512,512);
+  x.strokeStyle='rgba(90,130,200,.10)';x.lineWidth=1;
+  for(let i=0;i<=32;i++){x.beginPath();x.moveTo(i*16,0);x.lineTo(i*16,512);x.stroke();x.beginPath();x.moveTo(0,i*16);x.lineTo(512,i*16);x.stroke();}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,4);return t;})();
+const ground=new THREE.Mesh(new THREE.CircleGeometry(CFG.arena+22,80),
+  new THREE.MeshStandardMaterial({map:gTex,roughness:.95,metalness:.05}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+
+/* Arena boundary glow ring */
+const bring=new THREE.Mesh(new THREE.RingGeometry(CFG.arena-1.6,CFG.arena+1.6,140),
+  new THREE.MeshBasicMaterial({color:0x1e40af,transparent:true,opacity:.5,side:THREE.DoubleSide}));
+bring.rotation.x=-Math.PI/2; bring.position.y=.12; scene.add(bring);
+
+/* Stars */
+(()=>{const g=new THREE.BufferGeometry(),p=[];
+ for(let i=0;i<700;i++){const r=260+Math.random()*260,th=Math.random()*Math.PI*2,ph=Math.random()*Math.PI*.5;
+  p.push(Math.cos(th)*Math.sin(ph)*r, Math.cos(ph)*r+30, Math.sin(th)*Math.sin(ph)*r);}
+ g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
+ scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0x9fd0ff,size:1.5,transparent:true,opacity:.75})));})();
+
+/* ══════════════════════ PEN ══════════════════════ */
+const penGrp=new THREE.Group(); scene.add(penGrp);
+const postMat=new THREE.MeshStandardMaterial({color:0x1d4ed8,emissive:0x1e3a8a,emissiveIntensity:.5,roughness:.4,metalness:.6});
+const glowMat=new THREE.MeshBasicMaterial({color:0x60a5fa,transparent:true,opacity:.75});
+const NP=72;
+for(let i=0;i<NP;i++){
+  const a=i/NP*Math.PI*2;
+  if(angDiff(a,CFG.gateAng)<CFG.gateHalf) continue;
+  const post=new THREE.Mesh(new THREE.CylinderGeometry(.5,.7,7,7),postMat);
+  post.position.set(Math.cos(a)*CFG.penR,3.5,Math.sin(a)*CFG.penR);
+  post.castShadow=true; penGrp.add(post);
+  const cap=new THREE.Mesh(new THREE.SphereGeometry(.62,8,6),glowMat);
+  cap.position.set(post.position.x,7.2,post.position.z); penGrp.add(cap);
+}
+/* energy bands */
+[2.4,5.0].forEach(h=>{
+  const pts=[];
+  for(let i=0;i<=280;i++){const a=i/280*Math.PI*2;
+    if(angDiff(a,CFG.gateAng)<CFG.gateHalf){if(pts.length){addBand(pts.slice());pts.length=0;}continue;}
+    pts.push(new THREE.Vector3(Math.cos(a)*CFG.penR,h,Math.sin(a)*CFG.penR));}
+  if(pts.length)addBand(pts);
+  function addBand(P){penGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(P),
+    new THREE.LineBasicMaterial({color:0x38bdf8,transparent:true,opacity:.55})));}
+});
+/* floor disc of pen */
+const penFloor=new THREE.Mesh(new THREE.CircleGeometry(CFG.penR-.6,72),
+  new THREE.MeshBasicMaterial({color:0x10b981,transparent:true,opacity:.07}));
+penFloor.rotation.x=-Math.PI/2; penFloor.position.y=.14; scene.add(penFloor);
+
+/* Gate */
+const gateW=2*CFG.penR*Math.sin(CFG.gateHalf)+2;
+const gate=new THREE.Group();
+const gateSlab=new THREE.Mesh(new THREE.BoxGeometry(gateW,6,1.2),
+  new THREE.MeshStandardMaterial({color:0x10b981,emissive:0x065f46,emissiveIntensity:.9,roughness:.3,metalness:.4}));
+gateSlab.position.y=3; gateSlab.castShadow=true; gate.add(gateSlab);
+gate.position.set(Math.cos(CFG.gateAng)*CFG.penR,0,Math.sin(CFG.gateAng)*CFG.penR);
+gate.rotation.y=-CFG.gateAng+Math.PI/2; scene.add(gate);
+const gateBeacon=new THREE.PointLight(0x10b981,1.6,55,2);
+gateBeacon.position.copy(gate.position).setY(8); scene.add(gateBeacon);
+const GATEPOS={x:gate.position.x,z:gate.position.z};
+
+let gateOpen=false, gateTimer=0, gateAnim=0;
+function setGate(open,quiet){
+  if(gateOpen===open) return;
+  gateOpen=open;
+  if(open){gateTimer=14; toast('🛸 GATE BREACHED — alien override active','#fca5a5'); sfx.alarm();}
+  else {gateTimer=0; if(!quiet){toast('🔒 Gate re-secured','#86efac'); sfx.lock();}}
+  document.getElementById('gatest').textContent=open?'BREACHED':'SECURED';
+  document.getElementById('gatest').style.color=open?'#f87171':'#4ade80';
+}
+
+/* ══════════════════════ HAMSTER ══════════════════════ */
+const ham=new THREE.Group(); scene.add(ham);
+const furMat=new THREE.MeshStandardMaterial({color:0xf8fafc,roughness:.85});
+const pinkMat=new THREE.MeshStandardMaterial({color:0xfbcfe8,roughness:.8});
+const body=new THREE.Mesh(new THREE.SphereGeometry(3,26,18),furMat);
+body.scale.set(1,.82,1.22); body.position.y=2.4; body.castShadow=true; ham.add(body);
+const hHead=new THREE.Mesh(new THREE.SphereGeometry(2,20,16),furMat);
+hHead.position.set(0,3,-2.4); hHead.castShadow=true; ham.add(hHead);
+[-1.3,1.3].forEach(s=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.75,12,10),pinkMat);
+  e.position.set(s,4.5,-2.2); e.scale.z=.5; ham.add(e);});
+const snout=new THREE.Mesh(new THREE.SphereGeometry(.55,12,10),pinkMat); snout.position.set(0,2.7,-4.2); ham.add(snout);
+[-.75,.75].forEach(s=>{const y=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8),new THREE.MeshStandardMaterial({color:0x0b1120}));
+  y.position.set(s,3.4,-3.7); ham.add(y);});
+const hamGlow=new THREE.Mesh(new THREE.RingGeometry(4.2,5.6,40),
+  new THREE.MeshBasicMaterial({color:0x5eead4,transparent:true,opacity:.35,side:THREE.DoubleSide}));
+hamGlow.rotation.x=-Math.PI/2; hamGlow.position.y=.2; scene.add(hamGlow);
+
+const H={x:-90,z:-90,vx:0,vz:0,still:0,calm:false,squeakT:-9};
+const mouseP={x:-90,z:-90};
+
+/* ══════════════════════ AUDIO ══════════════════════ */
+let AUDIO=false, ufoMuted=true;
+const sfx={};
+(function buildAudio(){
+  const rev=new Tone.Reverb({decay:3,wet:.22}).toDestination();
+  const meow=new Tone.Synth({oscillator:{type:'sawtooth'},envelope:{attack:.05,decay:.25,sustain:.08,release:.25}}).connect(rev);
+  meow.volume.value=-16;
+  const squeak=new Tone.Synth({oscillator:{type:'triangle'},envelope:{attack:.005,decay:.09,sustain:0,release:.02}}).connect(rev);
+  squeak.volume.value=-10;
+  const blip=new Tone.Synth({oscillator:{type:'square'},envelope:{attack:.002,decay:.06,sustain:0,release:.02}}).connect(rev);
+  blip.volume.value=-26;
+  const purrN=new Tone.Noise('brown').start();
+  const purrF=new Tone.AutoFilter({frequency:16,depth:.9}).start();
+  const purrV=new Tone.Volume(-100).toDestination();
+  purrN.chain(new Tone.Filter(180,'lowpass'),purrF,purrV);
+  const ufoOsc=new Tone.Oscillator({type:'sine',frequency:400});
+  const ufoVol=new Tone.Volume(-100).toDestination();
+  ufoOsc.chain(new Tone.Vibrato({frequency:5.5,depth:.22}),new Tone.Filter(900,'lowpass'),ufoVol);
+  let lastS=0,lastM=0,lastB=0;
+  sfx.squeak=()=>{if(!AUDIO)return;const n=Tone.now();if(n-lastS<.18)return;lastS=n;
+    squeak.triggerAttackRelease('C6','32n',n);squeak.triggerAttackRelease('F6','32n',n+.08);};
+  sfx.meow=()=>{if(!AUDIO)return;const n=Tone.now();if(n-lastM<.35)return;lastM=n;
+    meow.triggerAttackRelease('G4','8n',n);meow.frequency.rampTo('C4',.32,n);};
+  sfx.blip=()=>{if(!AUDIO)return;const n=Tone.now();if(n-lastB<.22)return;lastB=n;
+    blip.triggerAttackRelease(rnd(700,1400),'64n',n);};
+  sfx.alarm=()=>{if(!AUDIO)return;const n=Tone.now();
+    meow.triggerAttackRelease('C3','16n',n);meow.triggerAttackRelease('G3','16n',n+.14);};
+  sfx.lock=()=>{if(!AUDIO)return;blip.triggerAttackRelease(300,'16n',Tone.now());};
+  sfx.purr=v=>{if(!AUDIO)return;purrV.volume.rampTo(v>0.02?Tone.gainToDb(v*.55)-8:-100,.25);};
+  sfx.start=()=>{ufoOsc.start();};
+  sfx.ufo=(d,t)=>{if(!AUDIO)return;
+    ufoVol.volume.value=ufoMuted?-100:Tone.gainToDb(Math.max(.02,1-d/170))-19;
+    ufoOsc.frequency.value=400+Math.sin(t*3)*34+Math.sin(t*.7)*60;};
+})();
+
+/* ══════════════════════ AGENTS ══════════════════════ */
+const GOALS={
+  FLEE:{d:'break the pursuit vector'}, RAID_GATE:{d:'exploit the open gate'},
+  HUDDLE:{d:'seek conspecific proximity'}, EXPLORE:{d:'survey unmapped terrain'},
+  PLAY:{d:'investigate the interesting thing'}, REST:{d:'conserve energy, groom'},
+  FOLLOW:{d:'shadow the trusted hamster'}, PACE:{d:'test the perimeter for weakness'}
+};
+const EMO_EMOJI={fear:'🙀',frustration:'😾',curiosity:'🐱',contentment:'😺',boredom:'🥱',trust:'😻'};
+const TEMPERAMENTS=[
+  {n:'skittish',fear:1.45,cur:.75,soc:.8,learn:1.0,bold:.6},
+  {n:'bold',fear:.68,cur:1.25,soc:.9,learn:1.05,bold:1.4},
+  {n:'analytical',fear:.95,cur:1.1,soc:1.0,learn:1.6,bold:1.0},
+  {n:'social',fear:1.0,cur:.95,soc:1.7,learn:1.2,bold:.95},
+  {n:'aloof',fear:.85,cur:1.35,soc:.45,learn:.9,bold:1.15}
+];
+const CAT_COLORS=[0xf97316,0xfbbf24,0x94a3b8,0xd97706,0xf5f5f4];
+const cats=[]; const labels=document.getElementById('labels');
+
+function makeCatMesh(col){
+  const g=new THREE.Group();
+  const m=new THREE.MeshStandardMaterial({color:col,roughness:.75,metalness:.05});
+  const dark=new THREE.MeshStandardMaterial({color:new THREE.Color(col).multiplyScalar(.65),roughness:.8});
+  const bodyGeo = THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(1.9,4,6,12) : new THREE.CylinderGeometry(1.9,1.9,6,14);
+  const b=new THREE.Mesh(bodyGeo,m);
+  b.rotation.x=Math.PI/2; b.position.y=2.9; b.castShadow=true; g.add(b);
+  [-1,1].forEach(s=>{const cap=new THREE.Mesh(new THREE.SphereGeometry(1.9,14,12),m);
+    cap.position.set(0,2.9,s*3); g.add(cap);});
+  const head=new THREE.Mesh(new THREE.SphereGeometry(1.8,16,14),m);
+  head.position.set(0,4.1,-3.3); head.castShadow=true; g.add(head);
+  const muz=new THREE.Mesh(new THREE.SphereGeometry(.85,12,10),dark); muz.position.set(0,3.6,-4.7); g.add(muz);
+  [-1,1].forEach(s=>{const e=new THREE.Mesh(new THREE.ConeGeometry(.7,1.5,4),m);
+    e.position.set(s*1.05,5.6,-3.3); g.add(e);
+    const y=new THREE.Mesh(new THREE.SphereGeometry(.32,10,8),new THREE.MeshStandardMaterial({color:0x86efac,emissive:0x22c55e,emissiveIntensity:.8}));
+    y.position.set(s*.72,4.4,-4.6); g.add(y);});
+  [-.9,0,.9].forEach((s,i)=>{[-1,1].forEach(d=>{const l=new THREE.Mesh(new THREE.CylinderGeometry(.42,.34,2.6,7),dark);
+    l.position.set(d*1.3,1.3,-1.6+i*1.7); g.add(l);});});
+  const tail=new THREE.Group();
+  const t=new THREE.Mesh(new THREE.CylinderGeometry(.35,.5,5.4,7),m);
+  t.position.y=2.7; tail.add(t); tail.position.set(0,3.6,3.1); tail.rotation.x=-Math.PI/3.2; g.add(tail);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(2.2,.22,8,26),
+    new THREE.MeshBasicMaterial({color:0x4ade80,transparent:true,opacity:.9}));
+  ring.rotation.x=Math.PI/2; ring.position.y=8.4; g.add(ring);
+  const halo=new THREE.Mesh(new THREE.RingGeometry(3.4,4.4,32),
+    new THREE.MeshBasicMaterial({color:0x4ade80,transparent:true,opacity:.22,side:THREE.DoubleSide}));
+  halo.rotation.x=-Math.PI/2; halo.position.y=.18; g.add(halo);
+  return {g,body:b,tail,ring,halo,mat:m};
+}
+
+function newCat(i){
+  const parts=makeCatMesh(CAT_COLORS[i%CAT_COLORS.length]);
+  const a=rnd(0,Math.PI*2), r=rnd(58,120);
+  parts.g.position.set(Math.cos(a)*r,0,Math.sin(a)*r);
+  scene.add(parts.g);
+  const tag=document.createElement('div'); tag.className='tag';
+  tag.innerHTML=`<b>${i+1}</b><span class="e">😺</span><span class="g">wander</span>`;
+  labels.appendChild(tag);
+  const T=TEMPERAMENTS[i%TEMPERAMENTS.length];
+  return {
+    id:i+1, ...parts, tag, temp:T, vx:rnd(-.2,.2), vz:rnd(-.2,.2), heading:a,
+    // ── COGNITIVE ──
+    B:{ gateOpen:false, gateConf:.9, hamX:0, hamZ:0, hamFresh:0,
+        alien:rnd(0,.18), tom:rnd(0,.12), trap:rnd(0,.1), predict:0,
+        peers:new Array(CFG.nCats).fill(0) },
+    // ── AFFECTIVE ──
+    E:{ fear:rnd(.15,.3), frustration:.05, curiosity:rnd(.25,.5),
+        contentment:rnd(.35,.55), boredom:rnd(.1,.3), trust:rnd(0,.06) },
+    PAD:{p:0,a:0,d:0},
+    // ── CONATIVE ──
+    D:{ safety:.2, freedom:.1, affiliation:rnd(.2,.5), exploration:rnd(.3,.6), play:rnd(.2,.4), rest:.15 },
+    goal:'EXPLORE', util:{}, commit:0, fatigue:0,
+    inPen:false, wanderT:rnd(0,6), wx:rnd(-1,1), wz:rnd(-1,1),
+    lastMeow:0, chatT:0, mono:'…'
+  };
+}
+for(let i=0;i<CFG.nCats;i++) cats.push(newCat(i));
+
+/* ══════════════════════ UFO + SABOTEURS ══════════════════════ */
+const ufo=new THREE.Group(); ufo.position.set(0,34,0); scene.add(ufo);
+const saucer=new THREE.Mesh(new THREE.CylinderGeometry(14,5,3.4,28),
+  new THREE.MeshStandardMaterial({color:0x8ba0bd,metalness:.9,roughness:.18}));
+ufo.add(saucer);
+const dome=new THREE.Mesh(new THREE.SphereGeometry(5.6,18,14,0,Math.PI*2,0,Math.PI/2),
+  new THREE.MeshStandardMaterial({color:0x38bdf8,transparent:true,opacity:.55,emissive:0x0ea5e9,emissiveIntensity:.6}));
+dome.position.y=1.7; ufo.add(dome);
+const rimLights=[];
+for(let i=0;i<12;i++){const a=i/12*Math.PI*2;
+  const l=new THREE.Mesh(new THREE.SphereGeometry(.55,8,6),new THREE.MeshBasicMaterial({color:0xfef08a}));
+  l.position.set(Math.cos(a)*12.5,-1.2,Math.sin(a)*12.5); ufo.add(l); rimLights.push(l);}
+const beam=new THREE.Mesh(new THREE.CylinderGeometry(6,19,34,26,1,true),
+  new THREE.MeshBasicMaterial({color:0x4ade80,transparent:true,opacity:.11,side:THREE.DoubleSide,depthWrite:false}));
+beam.position.y=-17; ufo.add(beam);
+const ufoLight=new THREE.PointLight(0x4ade80,1.4,90,2); ufoLight.position.y=-12; ufo.add(ufoLight);
+
+const sabs=[];
+function spawnSab(){
+  const g=new THREE.Group();
+  const suit=new THREE.MeshStandardMaterial({color:0x1e40af,roughness:.4,metalness:.3});
+  const skin=new THREE.MeshStandardMaterial({color:0x86efac,roughness:.25,emissive:0x14532d,emissiveIntensity:.35});
+  const b=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.7,4.2,12),suit); b.position.y=2.2; b.castShadow=true; g.add(b);
+  const h=new THREE.Mesh(new THREE.SphereGeometry(2,16,14),skin); h.position.y=5.5; h.scale.set(1,.9,1.15); g.add(h);
+  [-.85,.85].forEach(s=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.62,12,10),new THREE.MeshStandardMaterial({color:0x000}));
+    e.position.set(s,5.6,-1.6); e.scale.set(.9,1.5,.5); e.rotation.z=-s*.5; g.add(e);});
+  [-1.5,1.5].forEach(s=>{const arm=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,3.4,8),skin);
+    arm.position.set(s,2.6,0); arm.rotation.z=s*.32; g.add(arm);});
+  g.position.set(ufo.position.x,0,ufo.position.z);
+  scene.add(g);
+  sabs.push({g,out:false,t:0});
+  toast('👽 Operative deployed from mothership','#fca5a5');
+}
+
+/* ══════════════════════ CATNIP ══════════════════════ */
+const nips=[]; let nipStock=3, nipRe=0;
+function dropNip(x,z){
+  if(nipStock<=0) return;
+  nipStock--; updNip();
+  const g=new THREE.Group();
+  const m=new THREE.MeshStandardMaterial({color:0x84cc16,emissive:0x4d7c0f,emissiveIntensity:.8});
+  for(let i=0;i<5;i++){const l=new THREE.Mesh(new THREE.SphereGeometry(.9,10,8),m);
+    l.position.set(rnd(-1.2,1.2),rnd(.4,1.6),rnd(-1.2,1.2)); l.scale.y=.5; g.add(l);}
+  const ring=new THREE.Mesh(new THREE.RingGeometry(2.6,3.4,26),
+    new THREE.MeshBasicMaterial({color:0x84cc16,transparent:true,opacity:.35,side:THREE.DoubleSide}));
+  ring.rotation.x=-Math.PI/2; ring.position.y=.2; g.add(ring);
+  g.position.set(x,0,z); scene.add(g);
+  nips.push({g,life:26});
+  toast('🌿 Catnip deployed','#bef264');
+}
+function updNip(){document.getElementById('nipct').textContent=nipStock;}
+
+/* ══════════════════════ UI HELPERS ══════════════════════ */
+const toastBox=document.getElementById('toast');
+function toast(t,c){
+  const d=document.createElement('div'); d.className='msg'; d.textContent=t; d.style.color=c||'#cbd5e1';
+  toastBox.appendChild(d); setTimeout(()=>{d.style.opacity=0;d.style.transition='.5s';setTimeout(()=>d.remove(),520);},2600);
+  while(toastBox.children.length>4) toastBox.firstChild.remove();
+}
+let sel=-1;
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault(); squeak();}
+  if(e.key==='c'||e.key==='C') dropNip(mouseP.x,mouseP.z);
+  if(e.key==='0'){sel=-1;document.getElementById('tel').style.display='none';cats.forEach(c=>c.tag.classList.remove('sel'));}
+  if(e.key>='1'&&e.key<='5'){sel=+e.key-1;document.getElementById('tel').style.display='block';
+    cats.forEach((c,i)=>c.tag.classList.toggle('sel',i===sel));}
+});
+function squeak(){
+  H.squeakT=T; sfx.squeak();
+  ham.scale.set(1.25,.78,1.25); setTimeout(()=>ham.scale.set(1,1,1),110);
+  const w=new THREE.Mesh(new THREE.RingGeometry(3,4,36),
+    new THREE.MeshBasicMaterial({color:0x5eead4,transparent:true,opacity:.7,side:THREE.DoubleSide}));
+  w.rotation.x=-Math.PI/2; w.position.set(H.x,.3,H.z); scene.add(w); waves.push({m:w,t:0});
+}
+const waves=[];
+addEventListener('keyup',()=>{});
+addEventListener('mousemove',e=>{
+  const ch=document.getElementById('crosshair'); ch.style.left=e.clientX+'px'; ch.style.top=e.clientY+'px';
+  const m=new THREE.Vector2((e.clientX/innerWidth)*2-1,-(e.clientY/innerHeight)*2+1);
+  ray.setFromCamera(m,camera);
+  const hit=ray.intersectObject(ground);
+  if(hit.length){mouseP.x=hit[0].point.x; mouseP.z=hit[0].point.z;}
+});
+const ray=new THREE.Raycaster();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+let shift=false;
+addEventListener('keydown',e=>{if(e.key==='Shift')shift=true;});
+addEventListener('keyup',e=>{if(e.key==='Shift')shift=false;});
+
+let camMode='top';
+['follow','top','iso'].forEach(m=>document.getElementById('cam-'+m).onclick=()=>{
+  camMode=m;['follow','top','iso'].forEach(k=>document.getElementById('cam-'+k).classList.toggle('on',k===m));});
+const ufoBtn=document.getElementById('ufo-toggle');
+ufoBtn.onclick=()=>{ufoMuted=!ufoMuted;
+  ufoBtn.textContent=ufoMuted?'🔇 UFO DRONE: MUTED':'🔊 UFO DRONE: ACTIVE';
+  ufoBtn.classList.toggle('on',!ufoMuted);};
+document.getElementById('start').onclick=async()=>{
+  await Tone.start(); AUDIO=true; sfx.start();
+  document.getElementById('overlay').style.display='none';
+  toast('Simulation online — 5 minds instantiated','#5eead4');
+  setInterval(()=>{if(AUDIO&&!gateOpen&&sabs.length<2&&!won) spawnSab();},11000);
+};
+
+/* ══════════════════════ COLLISION ══════════════════════ */
+function fence(p,vel,rad){
+  const d=Math.hypot(p.x,p.z); if(d<1e-3) return;
+  const a=Math.atan2(p.z,p.x);
+  if(gateOpen&&angDiff(a,CFG.gateAng)<CFG.gateHalf) return;
+  const inner=CFG.penR-rad, outer=CFG.penR+rad;
+  if(d>inner&&d<outer){
+    const push=d>CFG.penR?outer:inner;
+    p.x=Math.cos(a)*push; p.z=Math.sin(a)*push;
+    const nx=Math.cos(a)*(d>CFG.penR?1:-1), nz=Math.sin(a)*(d>CFG.penR?1:-1);
+    const dot=vel.vx*nx+vel.vz*nz;
+    if(dot<0){vel.vx-=1.5*dot*nx; vel.vz-=1.5*dot*nz;}
+  }
+  const R=CFG.arena;
+  const dd=Math.hypot(p.x,p.z);
+  if(dd>R){const ang=Math.atan2(p.z,p.x); p.x=Math.cos(ang)*R;p.z=Math.sin(ang)*R;
+    vel.vx*=-.5; vel.vz*=-.5;}
+}
+
+/* ══════════════════════ AGENT UPDATE ══════════════════════ */
+function updateCat(c,dt,t){
+  const p=c.g.position;
+  const dHam=Math.hypot(p.x-H.x,p.z-H.z);
+  const dGate=Math.hypot(p.x-GATEPOS.x,p.z-GATEPOS.z);
+  const dCen=Math.hypot(p.x,p.z);
+  c.inPen = dCen < CFG.penR-1.5;
+  const E=c.E, B=c.B, D=c.D, T_=c.temp;
+
+  /* ───── PERCEPTION → COGNITIVE BELIEF UPDATE ───── */
+  const sight=78;
+  const sees = dHam<sight;
+  if(sees){ B.hamX=H.x; B.hamZ=H.z; B.hamFresh=1; }
+  else B.hamFresh=Math.max(0,B.hamFresh-dt*0.14);      // memory decay
+  // gate belief: direct perception, else decay of certainty
+  if(dGate<70){ B.gateOpen=gateOpen; B.gateConf=Math.min(1,B.gateConf+dt*1.2); }
+  else B.gateConf=Math.max(.08,B.gateConf-dt*0.09);
+  // ToM: "the hamster is deliberately pushing me toward the pen"
+  if(sees && dHam<46){
+    const toCen=Math.atan2(-p.z,-p.x);
+    const fromHam=Math.atan2(p.z-H.z,p.x-H.x);
+    const aligned=Math.cos(toCen-fromHam);            // hamster is on the far side from pen
+    B.tom=clamp(B.tom + aligned*dt*0.10*T_.learn*(0.4+E.fear));
+    B.predict=clamp(B.predict + (B.tom>.45?dt*0.09:-dt*0.03)*T_.learn);
+  } else B.tom=clamp(B.tom-dt*0.004);
+  // Pen-is-a-trap model
+  if(c.inPen) B.trap=clamp(B.trap+dt*0.055*T_.learn);
+  // Alien theory: witnessing a gate breach teaches them
+  if(gateOpen&&dGate<80) B.alien=clamp(B.alien+dt*0.16*T_.learn);
+  B.peers[c.id-1]=knowledge(c);
+
+  /* ───── APPRAISAL → AFFECT ───── */
+  const flight=(20+T_.fear*16)*(1+B.tom*.7)*(1-E.trust*.6);
+  const threat=sees?clamp(1-dHam/flight):0;
+  const heard=t-H.squeakT<0.55 && dHam<70 ? clamp(1-dHam/70) : 0;
+  const ufoD=Math.hypot(p.x-ufo.position.x,p.z-ufo.position.z);
+  const ufoThreat=clamp(1-ufoD/26)*0.5;
+
+  E.fear=clamp(E.fear + (threat*1.55*T_.fear + heard*1.5*(1-E.trust) + ufoThreat)*dt*1.9 - dt*0.30*(1+E.trust));
+  // Calm presence: hamster still + shift + near = trust building, fear soothing
+  const calming = H.calm && dHam<26 && dHam>5;
+  if(calming){ E.fear=clamp(E.fear-dt*0.55); E.trust=clamp(E.trust+dt*0.085*(0.4+E.curiosity)*(1-E.fear*0.8)); }
+  else E.trust=clamp(E.trust-dt*0.006 - threat*dt*0.10);
+  E.frustration=clamp(E.frustration + (c.inPen&&!gateOpen?dt*0.075*(0.5+B.trap):-dt*0.06) + (E.fear>.7?dt*0.05:0));
+  E.curiosity=clamp(E.curiosity + (nearestNip(p)?dt*0.35:dt*0.035*T_.cur) - E.fear*dt*0.42 - dt*0.02);
+  E.boredom=clamp(E.boredom + (E.fear<.2&&Math.hypot(c.vx,c.vz)<.12?dt*0.055:-dt*0.13));
+  E.contentment=clamp(E.contentment + (E.fear<.22&&E.frustration<.3?dt*0.07:-dt*0.16));
+  const {p:pp,a:aa,d:ddm}={
+    p:clamp((E.contentment+E.trust*.8+E.curiosity*.4-E.fear-E.frustration*.7+1.2)/2.4),
+    a:clamp(E.fear*.85+E.frustration*.5+E.curiosity*.45+heard*.4),
+    d:clamp((E.trust*.6+E.contentment*.6+T_.bold*.4-E.fear*1.1+1)/2)
+  };
+  c.PAD={p:pp,a:aa,d:ddm};
+
+  /* ───── DRIVES (homeostatic) ───── */
+  D.safety = clamp(lerp(D.safety, E.fear*1.15, dt*3.2));
+  D.freedom = clamp(D.freedom + (c.inPen? dt*0.11*(0.4+E.frustration+B.trap*.6) : -dt*0.22));
+  D.affiliation = clamp(D.affiliation + dt*0.035*T_.soc - (nearPeer(c,20)?dt*0.30:0));
+  D.exploration = clamp(D.exploration + dt*0.045*(0.4+E.boredom) - (Math.hypot(c.vx,c.vz)>.25?dt*0.06:0));
+  D.play = clamp(D.play + dt*0.04*E.curiosity*T_.cur + (nearestNip(p)?dt*0.5:0) - (E.fear>.5?dt*0.25:0));
+  c.fatigue=clamp(c.fatigue + (Math.hypot(c.vx,c.vz)>.30? dt*0.055 : -dt*0.10));
+  D.rest = clamp(c.fatigue*0.9 + E.contentment*0.15);
+
+  /* ───── CONATIVE ARBITRATION (utility) ───── */
+  const believesGateOpen = B.gateOpen && B.gateConf>.3;
+  const U={
+    FLEE:      D.safety*1.5*threat + E.fear*0.9 + heard*0.8,
+    RAID_GATE: (c.inPen? D.freedom*1.6*(believesGateOpen?1:0.10+B.alien*0.55) : 0) + (believesGateOpen&&c.inPen?0.5:0),
+    HUDDLE:    D.affiliation*0.95*(1-E.fear*0.35) + E.fear*0.25*T_.soc,
+    EXPLORE:   D.exploration*0.85*(1-E.fear) ,
+    PLAY:      D.play*1.05*(1-E.fear*1.1) + (nearestNip(p)?0.55:0),
+    REST:      D.rest*0.8*(1-E.fear*1.4)*(1-E.boredom*.5),
+    FOLLOW:    E.trust*1.7*(1-E.fear*1.2) + (E.trust>.5&&B.hamFresh>.3?0.35:0),
+    PACE:      (c.inPen&&!believesGateOpen? D.freedom*1.15*(0.3+B.trap) : 0)
+  };
+  c.util=U;
+  c.commit-=dt;
+  let best=c.goal, bv=(U[c.goal]||0)+ (c.commit>0?0.28:0.07);
+  for(const k in U) if(U[k]>bv){bv=U[k];best=k;}
+  if(best!==c.goal){ c.goal=best; c.commit=rnd(0.7,1.6); if(best==='FLEE'||best==='RAID_GATE') sfx.blip(); }
+
+  /* ───── ACTION (steering) ───── */
+  let ax=0,az=0;
+  const speedMul=(0.55+c.PAD.a*1.15)*(c.goal==='REST'?0.25:1);
+  const maxV=(0.44+T_.bold*0.10)*speedMul;
+  const seek=(tx,tz,w)=>{const dx=tx-p.x,dz=tz-p.z,l=Math.hypot(dx,dz)||1;ax+=dx/l*w;az+=dz/l*w;};
+  const flee=(tx,tz,w)=>{const dx=p.x-tx,dz=p.z-tz,l=Math.hypot(dx,dz)||1;ax+=dx/l*w;az+=dz/l*w;};
+
+  switch(c.goal){
+    case 'FLEE':{
+      let tx=B.hamX,tz=B.hamZ;
+      if(B.predict>.4){ tx+=H.vx*22*B.predict; tz+=H.vz*22*B.predict; }   // predictive evasion (ToM)
+      flee(tx,tz,1.0);
+      // orthogonal juke — smarter cats juke away from the pen
+      const dx=p.x-tx,dz=p.z-tz,l=Math.hypot(dx,dz)||1;
+      let ox=-dz/l, oz=dx/l;
+      if(B.tom>.35){ const s=Math.sign(ox*(-p.x)+oz*(-p.z)); ox*=-s; oz*=-s; }
+      ax+=ox*(0.55+B.tom*0.6); az+=oz*(0.55+B.tom*0.6);
+      if(t-c.lastMeow>2.6&&Math.random()<0.4){sfx.meow();c.lastMeow=t;}
+      break;}
+    case 'RAID_GATE': seek(GATEPOS.x*1.12,GATEPOS.z*1.12,1.1); break;
+    case 'PACE':{ const a=Math.atan2(p.z,p.x)+dt*1.4;
+      seek(Math.cos(a)*(CFG.penR-5),Math.sin(a)*(CFG.penR-5),0.9); break;}
+    case 'HUDDLE':{ const pr=nearestPeer(c); if(pr) seek(pr.g.position.x,pr.g.position.z,0.85); else c.goal='EXPLORE'; break;}
+    case 'FOLLOW': if(B.hamFresh>.15) seek(B.hamX,B.hamZ,0.85*(Math.hypot(p.x-B.hamX,p.z-B.hamZ)>13?1:-0.4)); break;
+    case 'PLAY':{ const n=nearestNip(p); if(n) seek(n.g.position.x,n.g.position.z,1.0);
+      else if(E.trust>.35&&B.hamFresh>.2) seek(B.hamX,B.hamZ,0.6); else c.goal='EXPLORE'; break;}
+    case 'REST': ax-=c.vx*2.2; az-=c.vz*2.2; break;
+    default:{ c.wanderT-=dt;
+      if(c.wanderT<=0){c.wanderT=rnd(1.6,3.6);const a=rnd(0,Math.PI*2);c.wx=Math.cos(a);c.wz=Math.sin(a);
+        if(dCen>CFG.arena*0.8){c.wx=-p.x/dCen;c.wz=-p.z/dCen;}}
+      ax+=c.wx*0.55; az+=c.wz*0.55;}
+  }
+  // separation
+  cats.forEach(o=>{if(o===c)return;const dx=p.x-o.g.position.x,dz=p.z-o.g.position.z,l=Math.hypot(dx,dz);
+    if(l<8&&l>0.01){ax+=dx/l*0.7;az+=dz/l*0.7;}});
+  // always avoid the UFO beam a bit
+  if(ufoD<24) flee(ufo.position.x,ufo.position.z,0.6);
+  // avoid hamster passively even when not fleeing
+  if(dHam<14&&c.goal!=='FOLLOW'&&c.goal!=='PLAY') flee(H.x,H.z,0.5);
+
+  c.vx+=ax*dt*3.4; c.vz+=az*dt*3.4;
+  const sp=Math.hypot(c.vx,c.vz);
+  if(sp>maxV){c.vx=c.vx/sp*maxV; c.vz=c.vz/sp*maxV;}
+  c.vx*=0.94; c.vz*=0.94;
+  p.x+=c.vx*dt*60; p.z+=c.vz*dt*60;
+  fence(p,c,2.6);
+
+  if(sp>0.02){ c.heading=lerp(c.heading,Math.atan2(c.vx,c.vz),clamp(dt*6)); }
+  c.g.rotation.y=c.heading;
+  c.body.position.y=2.9+Math.sin(t*13*Math.min(sp*3,1))*Math.min(sp*1.6,.35);
+  c.tail.rotation.z=Math.sin(t*(3+c.PAD.a*8))*(0.18+c.E.fear*0.5);
+  c.tail.rotation.x=-Math.PI/3.2 - c.E.fear*0.5;
+
+  /* mood colour */
+  const col=moodColor(c);
+  c.ring.material.color.setHex(col); c.halo.material.color.setHex(col);
+  c.halo.material.opacity=0.14+c.PAD.a*0.25;
+  c.ring.scale.setScalar(0.8+c.PAD.a*0.5);
+  c.mat.emissive=c.mat.emissive||new THREE.Color();
+  c.mat.emissive.setHex(col); c.mat.emissiveIntensity=0.05+c.E.fear*0.18;
+}
+
+function knowledge(c){ return clamp((c.B.alien*0.4+c.B.tom*0.35+c.B.trap*0.25)); }
+function dominant(c){ let k='contentment',v=-1; for(const e in c.E) if(c.E[e]>v){v=c.E[e];k=e;} return k; }
+function moodColor(c){
+  const d=dominant(c);
+  return {fear:0xf87171,frustration:0xfb923c,curiosity:0x38bdf8,contentment:0x4ade80,boredom:0x94a3b8,trust:0xe879f9}[d];
+}
+function nearestPeer(c){let b=null,bd=1e9;cats.forEach(o=>{if(o===c)return;
+  const d=Math.hypot(o.g.position.x-c.g.position.x,o.g.position.z-c.g.position.z);if(d<bd){bd=d;b=o;}});return b;}
+function nearPeer(c,r){const p=nearestPeer(c);return p&&Math.hypot(p.g.position.x-c.g.position.x,p.g.position.z-c.g.position.z)<r;}
+function nearestNip(p){let b=null,bd=44;nips.forEach(n=>{const d=Math.hypot(n.g.position.x-p.x,n.g.position.z-p.z);
+  if(d<bd){bd=d;b=n;}});return b;}
+
+/* ── social knowledge transmission (ToM-aware gossip) ── */
+const chatLines=[];
+function socialTick(dt,t){
+  for(let i=0;i<cats.length;i++)for(let j=i+1;j<cats.length;j++){
+    const a=cats[i],b=cats[j];
+    const d=Math.hypot(a.g.position.x-b.g.position.x,a.g.position.z-b.g.position.z);
+    if(d<17 && a.E.fear<.55 && b.E.fear<.55){
+      const rate=dt*0.30;
+      // each adopts the max belief, weighted by the *other's* credibility (its dominance/boldness)
+      ['alien','tom','trap'].forEach(k=>{
+        const hi=Math.max(a.B[k],b.B[k]);
+        a.B[k]=clamp(a.B[k]+(hi-a.B[k])*rate*b.temp.learn);
+        b.B[k]=clamp(b.B[k]+(hi-b.B[k])*rate*a.temp.learn);
+      });
+      // ToM about peers: update model of what the other knows
+      a.B.peers[b.id-1]=knowledge(b); b.B.peers[a.id-1]=knowledge(a);
+      a.chatT=t; b.chatT=t;
+      if(Math.random()<0.02) sfx.blip();
+      if(Math.random()<0.004) toast(`🗣 Cat ${a.id} ⇄ Cat ${b.id}: intel exchange`,'#c084fc');
+    }
+  }
+}
+
+/* ══════════════════════ TELEMETRY ══════════════════════ */
+const $=id=>document.getElementById(id);
+function bar(id,v,color){const e=$(id);if(!e)return;e.style.width=(v*100).toFixed(0)+'%';
+  const n=$(id+'-n'); if(n)n.textContent=(v*100).toFixed(0);}
+function monologue(c){
+  const d=dominant(c), b=c.B;
+  if(c.goal==='FLEE') return b.predict>.45?`It cuts me off every time — it *wants* me in that ring. Break left, not toward the pen.`:`Too close. Move. Move.`;
+  if(c.goal==='RAID_GATE') return b.alien>.5?`The tall green ones open the barrier. I've seen it. Go — now, before it seals.`:`Something changed at the barrier. Worth a look.`;
+  if(c.goal==='PACE') return `Solid. Solid. Solid… there must be a seam somewhere.`;
+  if(c.goal==='FOLLOW') return `The small one hasn't hurt me. It hums. I'll walk where it walks.`;
+  if(c.goal==='HUDDLE') return `Where are the others? Being alone out here feels wrong.`;
+  if(c.goal==='PLAY') return d==='curiosity'?`That green smell again. I need to roll in it.`:`Something is worth batting at.`;
+  if(c.goal==='REST') return `Nothing is hunting me. I'll fold my paws for a moment.`;
+  return d==='boredom'?`Same grid, same hum. Let's go somewhere unmapped.`:`Wide open ground. Let's map it.`;
+}
+function telemetry(){
+  if(sel<0) return; const c=cats[sel];
+  $('t-title').textContent='AGENT '+c.id;
+  $('t-temp').textContent=c.temp.n;
+  $('t-emoji').textContent=EMO_EMOJI[dominant(c)];
+  $('t-goal').textContent=c.goal.replace('_',' ');
+  $('t-goaldesc').textContent=GOALS[c.goal].d;
+  $('mono').textContent='“'+monologue(c)+'”';
+  $('t-conf').textContent='mem '+(c.B.hamFresh*100).toFixed(0)+'%';
+  $('c-gate').textContent=(c.B.gateOpen?'OPEN':'CLOSED')+' ('+(c.B.gateConf>.6?'sure':c.B.gateConf>.3?'unsure':'stale')+')';
+  $('c-gate').style.color=c.B.gateOpen!==gateOpen?'#f87171':'#e2e8f0';
+  $('c-seen').textContent=c.B.hamFresh>.05?`(${c.B.hamX.toFixed(0)}, ${c.B.hamZ.toFixed(0)})`:'lost track';
+  bar('c-alien',c.B.alien); bar('c-tom',c.B.tom); bar('c-trap',c.B.trap); bar('c-pred',c.B.predict);
+  $('c-peers').textContent=c.B.peers.map((v,i)=>i===c.id-1?'—':(v*100).toFixed(0)).join(' · ');
+  const P=c.PAD; $('t-pad').textContent=`P${P.p.toFixed(2)} A${P.a.toFixed(2)} D${P.d.toFixed(2)}`;
+  bar('a-fear',c.E.fear);bar('a-frus',c.E.frustration);bar('a-cur',c.E.curiosity);
+  bar('a-cont',c.E.contentment);bar('a-bore',c.E.boredom);bar('a-trust',c.E.trust);
+  bar('d-safety',c.D.safety);bar('d-free',c.D.freedom);bar('d-affil',c.D.affiliation);
+  bar('d-explore',c.D.exploration);bar('d-play',c.D.play);bar('d-rest',c.D.rest);
+  $('t-commit').textContent=c.commit>0?'commit '+c.commit.toFixed(1)+'s':'open';
+  const ent=Object.entries(c.util).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  $('t-utils').innerHTML=ent.map(([k,v],i)=>
+    `<div class="goalrow ${i===0?'top':''}"><span>${k.replace('_',' ')}</span><span>${v.toFixed(2)}</span></div>`).join('');
+}
+
+/* ══════════════════════ LOOP ══════════════════════ */
+const clock=new THREE.Clock(); let T=0, holdT=0, won=false, ufoA=0;
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clock.getDelta(),0.05); T+=dt;
+
+  /* hamster */
+  const dx=mouseP.x-H.x, dz=mouseP.z-H.z;
+  const accel=shift?0.018:0.085;
+  H.vx+=dx*accel; H.vz+=dz*accel;
+  const ufoD=Math.hypot(ufo.position.x-H.x,ufo.position.z-H.z);
+  const drag=ufoD<19?0.55:0.855;
+  H.vx*=drag; H.vz*=drag;
+  H.x+=H.vx*dt*60; H.z+=H.vz*dt*60;
+  fence(H,H,2.4);
+  const hs=Math.hypot(H.vx,H.vz);
+  H.calm = shift && hs<0.22;
+  ham.position.set(H.x,ufoD<19?Math.sin(T*7)*0.6+0.6:0,H.z);
+  if(hs>0.02) ham.rotation.y=lerp(ham.rotation.y,Math.atan2(H.vx,H.vz)+Math.PI,clamp(dt*8));
+  body.rotation.x+=H.vz*0.06; body.rotation.z-=H.vx*0.06;
+  hamGlow.position.set(H.x,.2,H.z);
+  hamGlow.material.color.setHex(H.calm?0xe879f9:0x5eead4);
+  hamGlow.scale.setScalar(H.calm?1.7+Math.sin(T*3)*0.14:1);
+  hamGlow.material.opacity=H.calm?0.45:0.28;
+
+  /* squeak waves */
+  for(let i=waves.length-1;i>=0;i--){const w=waves[i]; w.t+=dt;
+    w.m.scale.setScalar(1+w.t*11); w.m.material.opacity=Math.max(0,.7-w.t*.9);
+    if(w.t>.8){scene.remove(w.m);waves.splice(i,1);}}
+
+  /* agents */
+  cats.forEach(c=>updateCat(c,dt,T));
+  socialTick(dt,T);
+
+  /* catnip */
+  for(let i=nips.length-1;i>=0;i--){const n=nips[i]; n.life-=dt;
+    n.g.rotation.y+=dt*.7;
+    n.g.position.y=Math.sin(T*2+i)*0.2;
+    cats.forEach(c=>{const d=Math.hypot(c.g.position.x-n.g.position.x,c.g.position.z-n.g.position.z);
+      if(d<6){c.E.contentment=clamp(c.E.contentment+dt*0.5);c.E.trust=clamp(c.E.trust+dt*0.07);
+        c.E.fear=clamp(c.E.fear-dt*0.35);c.D.play=clamp(c.D.play-dt*0.6);n.life-=dt*2.2;}});
+    if(n.life<=0){scene.remove(n.g);nips.splice(i,1);}}
+  nipRe+=dt; if(nipRe>13&&nipStock<3){nipRe=0;nipStock++;updNip();}
+
+  /* purr feedback */
+  let purr=0; cats.forEach(c=>{const d=Math.hypot(c.g.position.x-H.x,c.g.position.z-H.z);
+    if(d<26) purr=Math.max(purr,c.E.trust*(1-d/26));});
+  sfx.purr(purr);
+
+  /* gate timer */
+  if(gateOpen){ gateTimer-=dt; if(gateTimer<=0) setGate(false);
+    const dg=Math.hypot(H.x-GATEPOS.x,H.z-GATEPOS.z); if(dg<11) setGate(false); }
+  gateAnim=lerp(gateAnim,gateOpen?1:0,clamp(dt*4.5));
+  gate.position.y=-gateAnim*6.5; gateSlab.material.color.setHex(gateOpen?0xef4444:0x10b981);
+  gateSlab.material.emissive.setHex(gateOpen?0x7f1d1d:0x065f46);
+  gateBeacon.color.setHex(gateOpen?0xef4444:0x10b981);
+  gateBeacon.intensity=1.3+Math.sin(T*(gateOpen?11:2.5))*0.6;
+
+  /* UFO */
+  ufoA+=dt*0.42;
+  ufo.position.x=Math.sin(ufoA)*66; ufo.position.z=Math.sin(ufoA*1.7)*52;
+  ufo.position.y=34+Math.sin(T*.8)*2.5;
+  saucer.rotation.y+=dt*1.4; dome.rotation.y-=dt*.6;
+  ufo.rotation.z=Math.sin(T*1.6)*0.07;
+  rimLights.forEach((l,i)=>l.material.color.setHSL(((T*.4+i/12)%1),.9,.6));
+  beam.material.opacity=.07+Math.abs(Math.sin(T*2))*.06;
+  sfx.ufo(Math.hypot(ufo.position.x,ufo.position.z),T);
+
+  /* saboteurs */
+  let alerting=false;
+  for(let i=sabs.length-1;i>=0;i--){const s=sabs[i]; s.t+=dt;
+    if(s.out){ s.g.position.y+=dt*34; s.g.scale.y=1+s.t*0.2; s.g.rotation.y+=dt*6;
+      if(s.g.position.y>62){scene.remove(s.g);sabs.splice(i,1);} continue; }
+    alerting=true;
+    const dgx=GATEPOS.x-s.g.position.x, dgz=GATEPOS.z-s.g.position.z, dg=Math.hypot(dgx,dgz);
+    if(dg>6){ s.g.position.x+=dgx/dg*13*dt; s.g.position.z+=dgz/dg*13*dt;
+      s.g.position.y=Math.abs(Math.sin(T*9))*1.4; s.g.rotation.y=Math.atan2(dgx,dgz);
+    } else { setGate(true); s.out=true; s.t=0; }
+    const dh=Math.hypot(H.x-s.g.position.x,H.z-s.g.position.z);
+    if(dh<9){ scene.remove(s.g); sabs.splice(i,1); sfx.squeak();
+      toast('💥 Operative intercepted! Gate protected','#86efac');
+      ham.scale.set(1.5,.6,1.5); setTimeout(()=>ham.scale.set(1,1,1),160); }
+  }
+  $('alert').style.display=alerting?'block':'none';
+
+  /* labels + score */
+  let inPen=0, hive=0;
+  const v=new THREE.Vector3();
+  cats.forEach(c=>{
+    if(c.inPen) inPen++;
+    hive+=knowledge(c);
+    v.copy(c.g.position); v.y+=13; v.project(camera);
+    if(v.z>1){c.tag.style.display='none';return;}
+    c.tag.style.display='flex';
+    c.tag.style.left=((v.x*.5+.5)*innerWidth)+'px';
+    c.tag.style.top=((v.y*-.5+.5)*innerHeight)+'px';
+    c.tag.children[1].textContent=EMO_EMOJI[dominant(c)];
+    c.tag.children[2].textContent=c.goal.replace('_',' ').toLowerCase();
+    c.tag.style.color='#'+moodColor(c).toString(16).padStart(6,'0');
+  });
+  $('score').textContent=inPen;
+  $('hive').textContent=(hive/CFG.nCats*100).toFixed(0);
+  penFloor.material.opacity=.05+inPen/CFG.nCats*.12;
+  penLight.intensity=0.8+inPen*0.35;
+
+  if(inPen===CFG.nCats&&!gateOpen){ holdT+=dt; } else holdT=Math.max(0,holdT-dt*1.6);
+  $('wintimer').textContent=holdT.toFixed(1)+'s';
+  if(holdT>=CFG.winHold&&!won){ won=true; victory(); }
+
+  telemetry();
+
+  /* camera */
+  const cx=camera.position;
+  if(camMode==='follow'){
+    cx.x=lerp(cx.x,H.x,dt*3); cx.z=lerp(cx.z,H.z+78,dt*3); cx.y=lerp(cx.y,56,dt*3);
+    camera.lookAt(H.x,4,H.z);
+  } else if(camMode==='top'){
+    cx.x=lerp(cx.x,0,dt*3); cx.z=lerp(cx.z,1,dt*3); cx.y=lerp(cx.y,236,dt*3); camera.lookAt(0,0,0);
+  } else {
+    cx.x=lerp(cx.x,128,dt*3); cx.z=lerp(cx.z,128,dt*3); cx.y=lerp(cx.y,118,dt*3); camera.lookAt(0,0,0);
+  }
+  renderer.render(scene,camera);
+}
+function victory(){
+  const o=document.getElementById('overlay');
+  o.innerHTML=`<h1 class="big">CONTAINMENT ACHIEVED</h1>
+    <div class="sub" style="margin-top:12px;font-size:12px">All five agents held for ${CFG.winHold}s</div>
+    <div class="cards"><div class="card" style="width:520px">
+      <h3 style="color:#5eead4">Post-run mind report</h3>
+      ${cats.map(c=>`<p style="margin:6px 0"><b style="color:#fff">Agent ${c.id}</b> <span style="color:#64748b">(${c.temp.n})</span> — 
+        intel ${(knowledge(c)*100).toFixed(0)}%, trust ${(c.E.trust*100).toFixed(0)}%, 
+        dominant affect <b style="color:#${moodColor(c).toString(16)}">${dominant(c)}</b>, final goal ${c.goal.toLowerCase().replace('_',' ')}</p>`).join('')}
+    </div></div>
+    <button class="start" onclick="location.reload()">RUN AGAIN</button>`;
+  o.style.display='flex';
+  toast('🏆 All agents contained','#4ade80');
+}
+loop();
+</script>
+</body>
+</html>
