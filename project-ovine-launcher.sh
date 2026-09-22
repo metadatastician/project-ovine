@@ -8,7 +8,7 @@
 # app-name = "project-ovine"
 # app-display = "Project Ovine"
 # app-url = "http://localhost:8899"
-# standards-compliance = ["launcher-standard.a2ml"]
+# standards-compliance = ["launcher-standard_praxis.deed"]
 # modes = ["--auto", "--start", "--stop", "--status", "--integ", "--disinteg", "--help", "--version"]
 # platforms = ["linux", "wsl"]
 # lifecycle-phases-covered = ["LM-LA-INSTALL"]
