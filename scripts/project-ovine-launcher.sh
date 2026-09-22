@@ -18,7 +18,7 @@ APP_NAME="project-ovine"
 VERSION="0.1.0 (local) [linux-wsl]"
 PORT=8899
 URL="http://localhost:$PORT"
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # XDG state and runtime dirs
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
@@ -90,7 +90,7 @@ integration() {
 $WshShell = New-Object -comObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut("C:\Users\USER\Desktop\Project Ovine.lnk")
 $Shortcut.TargetPath = "wsl.exe"
-$Shortcut.Arguments = "-e bash -c `"/home/hyperpolymath/developer/repos/metadatastician/meta-repos/project-ovine/project-ovine-launcher.sh --auto`""
+$Shortcut.Arguments = "-e bash -c `"/home/hyperpolymath/developer/repos/metadatastician/meta-repos/project-ovine/scripts/project-ovine-launcher.sh --auto`""
 $Shortcut.Save()
 EOF
     powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w /tmp/create_shortcut.ps1)"
