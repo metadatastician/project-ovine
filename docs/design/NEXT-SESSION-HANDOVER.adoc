@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Project Ovine — next-session handover
+:toc:
+
+== Purpose and boundary
+
+This is a handoff for the next *bounded mockup experiment* in Project Ovine. It
+is not a commitment to build a complete game, a production agent architecture,
+or the Rust/proof-language implementation. The Three.js/ECS implementation is a
+cheap, disposable design instrument. The question is whether an observable
+behaviour is worth modelling; an honest result may be to tune the existing
+mockup or discard the idea.
+
+The repository's original owner-stated backlog remains authoritative and
+verbatim in `TRIAL-BACKLOG.adoc`. Do not rewrite its entry or turn a working
+interpretation into owner intent. `logics/ov-09.adoc` is the current, detailed
+working interpretation of that entry. Read both before coding.
+
+== Current state to carry forward
+
+* `src/{ecs,components,systems,main}.js` is the committed ECS mockup. It is not
+  the richer recovered single-file prototype.
+* The mockup's `CACBrainComponent` currently has `fear`, `trust`, and
+  `curiosity`; `trust` is declared but unused. The active arbitration is a
+  single `goal` string. Do not silently import the recovered prototype's
+  beliefs, drives, temperaments, or social learning.
+* The design problem in ov-09 is that threat/fear is currently tied to player
+  proximity, while the proposed herding case depends on who is approaching
+  whom. `FLEE` also currently uses the player position as its escape vector.
+  Read the exact code before relying on these descriptions; line numbers can
+  move.
+* `ov-09` supplies a formal candidate (`stance`, a directional relation; fear
+  source; appetite/pursuit; two attractor forms), interim experiments,
+  discard conditions D1–D3, and open questions. Those are hypotheses to test,
+  not decisions already taken by the owner.
+* No game logic is changed by this handoff. The first listed mockup experiment
+  in ov-09 is the next bounded implementation candidate. Steps are not a
+  schedule or a commitment to complete all of them.
+
+== Owner decision that must remain open
+
+The only question ov-09 says blocks its final near-edge step is: *what happens
+at `R_STRIKE` when the attractor is the herder?* The working document describes
+one possible consequence (the pursued animal reaches the herder), but this is
+not an owner ruling. Do not implement a damage, capture, collision, or fail
+state at that boundary without asking the owner. Earlier experiments can
+proceed without resolving it.
+
+The other open questions in ov-09 also remain open: whether stance can change
+with experience, whether it is keyed by kind or individual, what flocking means
+if a kind preys on itself, and whether the proposed names are acceptable. Do not
+use the currently unused `trust` field as a shortcut or assume it is free.
+
+== Suggested scope for the next implementation session
+
+Start with the *first* interim experiment in `logics/ov-09.adoc`, and no more:
+
+. Inspect `index.html`, `src/components.js`, `src/systems.js`, `src/main.js`, and
+  the existing test setup. Verify the design document's present-day code claims
+  before editing.
+. Add only the literal, directional `stance(observerKind, otherKind)` table
+  and gate the specified passive proximity-fear input. Do not add pursuit,
+  bait, a strike consequence, new traits, or a broad agent rewrite in this step.
+. Preserve a small control/baseline comparison so D1 is honestly testable: can
+  the player get the same readable result just by changing existing biases?
+  Record if that simpler explanation makes the new relation unnecessary.
+. Make the result observable in the running mockup and report exactly how to
+  reproduce it. Add an automated test only if the current project can support
+  one without disproportionate scaffolding; do not turn this mockup into a
+  production architecture to test a disposable experiment.
+. Run the relevant checks and `bash scripts/ovine-design.sh check`. Report
+  results, including manual checks that could not be automated.
+. Stop after the smallest experiment. Ask before proceeding to the next
+  interim step if its scope depends on a choice not stated in ov-09.
+
+This is a trial, not a feature-completion checklist. Compare the actual
+behaviour against the intent and discard conditions in ov-09. If the experiment
+fails to distinguish pair-specific response from bias tuning, report that
+rather than defending the new mechanism.
+
+== Research and evidence discipline
+
+The recovered file `verbatim/cac-agent-system-spec-2026-08-07.md` is generated
+owner-commissioned material, not an independent source, and its citations have
+not been verified. Treat it as a source of leads, not established evidence.
+Keep empirical claims distinct from design hypotheses and gameplay choices.
+When research is needed, verify primary/authoritative sources, cite what was
+actually checked, and avoid implying that animal-behaviour findings transfer
+directly to human players or game agents.
+
+== Copy/paste prompt for the next coding agent
+
+[source,text]
+----
+Work in metadatastician/project-ovine on the existing Arena session branch.
+Your task is one bounded, disposable Three.js/ECS mockup experiment, not making
+the whole game and not designing the production Rust/proof implementation.
+
+Read these first:
+1. docs/design/TRIAL-BACKLOG.adoc — preserve the owner's verbatim intent.
+2. docs/design/logics/ov-09.adoc — current formalisation, experiments,
+   discard conditions, and open questions.
+3. docs/design/NEXT-SESSION-HANDOVER.adoc — scope and decision boundary.
+4. src/components.js, src/systems.js, src/main.js, index.html, and existing
+   tests — verify the current behavior and test affordances yourself.
+5. docs/design/verbatim/README.adoc — provenance warning for recovered sources.
+
+Implement only the first interim experiment in ov-09: introduce the literal
+directional stance(observerKind, otherKind) table and gate the specified
+passive proximity-fear input. Do not add appetite/pursuit, bait, a strike
+consequence, a generalized cognitive architecture, or unrelated cleanup. Keep
+the experiment cheap to revert. Preserve a baseline comparison that tests
+whether existing fear/social biases already explain the observed behavior.
+
+Do not resolve the owner's open question about what happens at R_STRIKE. Do not
+assume stance learning, individual-level stance, self-predation flocking
+semantics, or the proposed vocabulary is approved. Ask if one of these choices
+is necessary to complete this smallest experiment; otherwise leave it open.
+Do not consume the unused trust field without explicit direction.
+
+Validate that the behavior is visible and reproducible, use existing test
+conventions where proportionate, run relevant checks and
+`bash scripts/ovine-design.sh check`, then report changed files, observed
+behavior, checks and limitations. Stop at this experiment. Recommend either
+keep, revise, or discard based on ov-09's D1; do not proceed to build the game.
+----
+
+== What this handoff does not cover
+
+The cross-repository lessons and the broader research agenda across cognitive,
+conative, affective, decision-science, human-factors, and social dimensions are
+a separate discussion. No issues or pull requests have been sent to the other
+projects as part of this handoff; target repositories, owners, evidence, and
+issue scope should be agreed before external work is filed.
