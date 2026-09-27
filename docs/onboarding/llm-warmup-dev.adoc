@@ -4,7 +4,17 @@
 
 == What is project-ovine?
 
-See `README.adoc` for overview.
+See `README.adoc` for the overview. For game-design work, the authoritative
+owner-stated intent and the mockup's boundaries are in
+`docs/design/TRIAL-BACKLOG.adoc`. It is verbatim: do not paraphrase its entries.
+The design working documents under `docs/design/logics/` are interpretations,
+not new owner decisions. Read `docs/design/verbatim/README.adoc` before using
+the recovered prototypes or their unverified citations.
+
+For the next bounded mockup experiment, start with
+`docs/design/NEXT-SESSION-HANDOVER.adoc` and `docs/design/logics/ov-09.adoc`.
+Do not expand the task into building the complete game or production agent
+architecture.
 
 == Key Commands
 
