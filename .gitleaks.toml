@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MPL-2.0
+
+[extend]
+path = ".gitleaks-estate.toml"
+
+[allowlist]
+description = "Public UUIDv5 worked example in CLADE identity documentation"
+# This example also appears in git history, including the former
+# build/templates/CLADE.a2ml.in. Match only its complete public UUID so
+# credentials in those files remain subject to the estate scanner rules.
+regexTarget = "secret"
+regexes = ['''^e216170e-ff47-5a5c-bbdd-15e61c8190c8$''']
