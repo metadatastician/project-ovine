@@ -1,95 +1,199 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= AFFIRMATION — Project Ovine, as of <UTC timestamp>
-:toc: macro
-:toclevels: 2
-
-_the No-Bullshit file: what we affirm was true and checkable at this moment._
-
-[NOTE]
-====
-*This file is a template.* Replace the `{{…}}` placeholders and the `<…>` anchor
-fields, then re-run your project's own checks in the same session before signing.
-
-An *affirmation* is a solemn declaration of the truth of a statement, made by
-someone who _declines to swear an oath_ — our truth-as-best-believed at a stamped
-instant, binding on our honesty, not a claim of infallibility. It is the third of
-the README / EXPLAINME / AFFIRMATION trio:
-
-[cols="1,3,2",options="header"]
-|===
-| File | Answers | Tense
-| `README.adoc` | _Where is this going, and why?_ — steering, intent, vision | future / aspirational
-| `EXPLAINME.adoc` | _How is it built, and what's the evidence?_ — engineering | descriptive / mechanism
-| *`AFFIRMATION.adoc`* (this file) | _What can we honestly affirm was *true and checkable* at a stamped moment?_ | a frozen instant, falsifiable
-|===
-====
-
-toc::[]
+= AFFIRMATION — Project Ovine, as of 2026-10-07
+Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+:toc:
+:icons: font
 
 == What this is, and how it works
 
-*What it is.* A short, dated, signed snapshot of what metadatastician can honestly and
-verifiably claim about *Project Ovine* at one exact commit. Nothing here is
-marketing and nothing is a promise about the future — those live in the README.
-This file is the receipt.
+This file is a dated, signed snapshot of what can honestly be claimed about
+*Project Ovine* at one exact commit. It is the third file of the README /
+EXPLAINME / AFFIRMATION trio. The README says where the project is going.
+EXPLAINME says how it is built. This file says what was *true and checkable*
+at the anchor below.
 
-*How it stays trustworthy.* Three moving parts:
+Every claim here comes from running the project's own checks in the session
+that wrote this file. Where the README, the Justfile or memory disagree with a
+live run, the live run wins and the disagreement is recorded.
 
-. *Ground truth, not memory.* Every claim below must be produced by _running the
-  project's own checks_ in the session that writes this file (build, tests,
-  typecheck, `just audit`). Where a status doc, the `Justfile`, or memory says
-  otherwise, the live run wins and the contradiction is flagged here.
-. *A frozen anchor.* The file names the exact commit SHA, branch, UTC timestamp,
-  and toolchain (see <<verifiable-anchor>>), so "true" always means "true _at
-  this point_". Move the SHA and this file is a draft until it is re-run.
-. *A real signature.* It is landed by a *signed git commit*; that signature over
-  this content at the anchored SHA is what makes the affirmation tamper-evident
-  and attributable — not the prose alone.
+The owner lands this file with a signed git commit. That signature over this
+content, at the anchored commit, is what makes the affirmation attributable.
 
-*We are fallible.* This is our best honest belief, not a proof of its own
-correctness. Treat it as a falsifiable claim, not gospel.
+== The epistemic contract
 
-== The epistemic contract (read this before you trust _or_ attack)
+This document records best belief at the timestamp below. It is not a
+guarantee of correctness. The only guarantee is *no intentional overclaim*.
+Where something was checked, it says how. Where something was not checked, it
+says so. A claim that later proves false is an error to fix, not a lie.
 
-This document records metadatastician's *best belief* at the timestamp below. It is
-*not a guarantee of correctness.* The only guarantee is *no intentional
-overclaim*: where something is proven we say "proven"; where it is a documented
-trust boundary, an experiment, or an unwired module, we say so; where a claim is
-the README's aspiration rather than a checked result, we say so. An honest claim
-that later turns out false is an *error to be fixed* — not a lie.
-
-*Standing invitation to refute.* You are invited to bulldoze any claim in this
-file. Bring a counter-example, a failing run, or a contradicting source.
-
-== What we affirm (fill in — delete the examples)
-
-[cols="2,1,3",options="header"]
-|===
-| Claim | Status | Evidence (command / `file:line`)
-| _e.g. The library builds clean_ | affirmed | `just build` at the anchor SHA
-| _e.g. The ABI seam typechecks_ | affirmed | `idris2 --typecheck abi.ipkg`
-| _e.g. Feature X is complete_ | aspiration | README §… (not yet checked)
-|===
-
-== What we do NOT claim
-
-* List the known gaps, trust boundaries, postulates, unwired modules, and stale
-  docs here. Silence is not affirmation — name what you have *not* verified.
+You are invited to refute any claim here with a failing run, a
+counter-example or a contradicting source.
 
 [#verifiable-anchor]
 == Verifiable anchor
 
-[cols="1,3"]
+[cols="1,2", options="header"]
 |===
-| Project | Project Ovine
-| Repository | https://github.com/metadatastician/project-ovine
-| Commit (SHA) | <full commit SHA at time of signing>
-| Branch | main
-| Timestamp (UTC) | <ISO-8601 UTC timestamp>
-| Toolchain | <compilers / provers / versions used to ground the claims>
-| Affirmed by | Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+| Field | Value
+| Repo | https://github.com/metadatastician/project-ovine
+| Branch | `main`
+| Commit (HEAD) | `90f963c1c078ff3c8fc43b03dc8adadaf02472c1`
+| Permalink | https://github.com/metadatastician/project-ovine/tree/90f963c1c078ff3c8fc43b03dc8adadaf02472c1
+| Verified (UTC) | 2026-10-07T15:05:47Z
+| Working-tree delta at verification | none before the checks ran (`git status --porcelain` empty); afterwards only git-ignored build output that the checks themselves wrote
+| Toolchain | Zig 0.16.0; Idris 2 0.7.0; Agda 2.7.0.1 with agda-stdlib 2ffa8b7d; Lean 4.34.1; Coq 8.20.1; Bun 1.3.14; just 1.56.0. Not available: TLC (TLA+ model checker).
 |===
 
-_Landed by a signed git commit. Verify with `git log --show-signature` that the
-anchor SHA above matches the commit that introduced this affirmation._
+[quote]
+____
+If you are reading this at a later commit, the claims may have drifted.
+Re-run the reproduction steps and write a fresh affirmation; do not trust a
+stale one.
+____
+
+== Companion documents and repo metadata (cross-check)
+
+* `README.adoc` and the GitHub repository description agree on the project.
+  It is an experimental herding-game simulation, a proving ground for the
+  enaction-engine's cognitive, affective and conative AI. The code that
+  matches that description is a browser ECS simulation in `src/` (`main.js`,
+  `systems.js`, `ecs.js`, `components.js`), loaded by `index.html` with
+  three.js from unpkg through an import map.
+* *`CLAUDE.md` contradicts both.* Its generated identity block calls this
+  repository the "Canonical RSR-compliant repository template", with IS-NOT
+  "a project in its own right", and reports its state as
+  "maintenance; production; 95% complete". That block describes the RSR
+  template this repository was made from, not Project Ovine. Nothing measured
+  below supports "production" or "95%".
+* `README.adoc` still contains the template's `[IMPORTANT]` admonition
+  ("*This file is a template.* … from the *RSR template repo*") just under
+  the project's own description.
+* This file replaces an earlier `AFFIRMATION.adoc` that was the unfilled
+  estate template (placeholder heading and anchor fields). It made no claims,
+  so it is replaced in place rather than archived. Git history keeps it.
+
+== The honest state (one breath)
+
+At the anchor, the golden path named in `CLAUDE.md`, `just test && just
+quality`, fails at its first step. `just test` is still the template stub and
+exits 1 by design. Most other Justfile recipes are template stubs that print
+a TODO and exit 0. The browser simulation has no tests. Its local modules
+resolve and bundle with Bun. The Idris2 ABI builds. The Zig FFI has no build
+targets, and its source does not compile. The Agda and Coq proofs check.
+The Lean gate checks nothing, and the Idris2 gate checks one file of six.
+
+=== What is solid (and how we checked)
+
+* `bun build src/main.js --target browser --external three` succeeds and
+  writes a 26.72 KB bundle. All local imports in the simulation resolve, and
+  the code parses. Nothing here checks its behaviour.
+* `idris2 --typecheck abi.ipkg` builds all 3 ABI modules (`Abi.Types`,
+  `Abi.Layout`, `Abi.Foreign`). The log was read for `Error:`, not just the
+  exit code. There were no errors, and two shadowing warnings in `Abi.Layout`,
+  both for the implicit `n` at lines 87 and 89.
+* `scripts/check-proofs.sh agda` and `scripts/check-proofs.sh coq` pass.
+  `Properties.agda` compiles under `agda --safe`, and `TypeSafety.v` compiles
+  under `coqc`. Each is the only gated file for its language.
+* `just verify` passes ("All OpenSSF Best Practices prerequisites satisfied",
+  27 workflows). `just must-check` passes.
+* `tests/workflows/validate_workflows_test.sh` passes with 0 errors and 6
+  warnings. Three recommended workflows are absent: `instant-sync.yml`,
+  `npm-bun-blocker.yml` and `ts-blocker.yml`.
+* On the anchor commit's GitHub status check rollup (read over the GraphQL
+  API), 23 of 30 contexts concluded `SUCCESS`. These are mostly scanners and
+  policy checks over the tree. None tests the simulation.
+
+=== The honest nuance you must not lose
+
+* *Most green Justfile recipes here mean nothing.* `just lint`, `just
+  fmt-check`, `just aspect` and `just e2e` exit 0, but each recipe body is
+  the template's `# TODO: Replace with …` comments followed by an `echo` of
+  success. `just build` is the same kind of stub. None of them runs a tool.
+* *The real aspect test fails, but on a false positive.* `bash
+  tests/aspect_tests.sh` reports PASS=2 FAIL=1. The failing check greps
+  `src/` and `verification/` for `Admitted`, `sorry` and `unsafeCoerce`. All
+  four hits are prose that *forbids* those constructs:
+  `verification/proofs/README.adoc:48–50` and a comment at
+  `coq/TypeSafety.v:6`. No banned proof escape was found in code.
+* *A green Lean gate here means nothing.* `scripts/check-proofs.sh lean4`
+  exits 0, but its only file, `ApiTypes.lean`, is quarantined as
+  expected-fail ("has never compiled"; `Nat.zero_le max` at line 44).
+* *The Idris2 verification gate passes one file.* Only `ABI/Foreign.idr` is
+  gated, and it checks. Five files are quarantined as expected-fail, each
+  with a recorded reason: `Types.idr`, `ABI/Layout.idr`, `ABI/Platform.idr`,
+  `ABI/Pointers.idr` and `ABI/Compliance.idr`.
+* *The repository's `mise.toml` is untrusted on a fresh machine.* mise warns
+  on every tool call. These checks ran with the mise shims removed from
+  `PATH`.
+
+=== Known-incomplete but honestly fenced
+
+* `verification/proofs/tlaplus/StateMachine.tla` was *not checked, rather
+  than found failing*: TLC is not installed here.
+* The simulation was not run in a browser. Its runtime behaviour, including
+  the cognitive, affective and conative agent logic, is not affirmed.
+* Many App check suites were still `QUEUED` on the anchor commit and reported
+  nothing, among them CodeRabbit, Codecov, Semgrep, SonarQube Cloud and
+  GitGuardian. Their output was not read for this file.
+
+=== Outstanding / weak / refuted (no spin)
+
+[cols="2,3", options="header"]
+|===
+| Check | Result at the anchor
+| `just test && just quality` (the golden path named in `CLAUDE.md`) | Refuted, rc=1 at `just test`. Its body is the template stub, which prints "FAIL: `just test` has not been wired to a real test command yet." `just quality` depends on `test`, so it cannot pass either.
+| Zig FFI, `zig build test` in `src/interface/ffi` | Refuted: "no step named 'test'". `build.zig` declares no targets. Its `build` function only reads the target and optimize options, so `zig build` succeeds while building nothing.
+| Zig FFI source, `zig test -lc src/main.zig` | Refuted, rc=1: `src/main.zig:44:5: error: opaque types cannot have fields`. `Handle` is declared `opaque { allocator: …, initialized: … }`. This is template code, not code written for this project.
+| `tests/e2e/template_instantiation_test.sh` | Refuted, rc=1, 2 errors: required workflows `npm-bun-blocker.yml` and `ts-blocker.yml` are missing.
+| CI on the anchor: failures | Rollup contexts at `FAILURE`: `estate-rules` and `lint-workflows`. Check suites absent from the rollup: `FAILURE` for `.github/workflows/mirror.yml`; `STARTUP_FAILURE` for Governance, Hypatia Security Scan and SonarQube. A startup failure means no jobs ran.
+| `scripts/check-proofs.sh lean4` | Vacuous: zero files checked (see above).
+|===
+
+== Reproduce it yourself
+
+From a clone checked out at the anchor commit:
+
+[source,bash]
+----
+git checkout 90f963c1c078ff3c8fc43b03dc8adadaf02472c1
+just test                                   # rc=1: template stub
+just --show lint                            # a TODO comment and an echo
+bun build src/main.js --target browser --external three --outfile /tmp/ovine.js
+idris2 --typecheck abi.ipkg                 # look for "Error:", not the exit code
+(cd src/interface/ffi && zig build test)    # no step named 'test'
+(cd src/interface/ffi && zig test -lc src/main.zig)   # main.zig:44 opaque fields
+for p in agda coq lean4 idris2; do bash scripts/check-proofs.sh "$p"; done
+bash tests/aspect_tests.sh                  # PASS=2 FAIL=1 (prose hits)
+for t in tests/workflows/*.sh tests/e2e/*.sh; do bash "$t"; done
+just verify must-check
+----
+
+If `mise` shims are on your `PATH` and you have not trusted this repository's
+`mise.toml`, remove them from `PATH` first.
+
+Agda needs agda-stdlib. Point `AGDA_DIR` at a directory whose `libraries` file
+names the stdlib's `.agda-lib` and whose `defaults` file says
+`standard-library`.
+
+== One-line characterisation (quote this)
+
+At `90f963c`, Project Ovine is an untested browser herding simulation inside
+unfinished RSR template scaffolding. Its golden path is the template's
+failing stub, its Zig FFI builds nothing and does not compile, two of four
+proof languages check, and `CLAUDE.md` still describes it as the template.
+
+== Joint attestation
+
+*Engineering party (AI).* Claude (`claude-opus-5-5`), session run at
+2026-10-07T15:05:47Z, ran every check above and wrote this file. The wording
+is a faithful report of those runs. Nothing was copied forward from an earlier
+affirmation.
+
+*Owner.* Jonathan D.A. Jewell signs by committing this file with an SSH
+signing key:
+
+[source,bash]
+----
+git commit -S -s AFFIRMATION.adoc -m "docs: affirm state at 90f963c1"
+git log --show-signature -1
+----
